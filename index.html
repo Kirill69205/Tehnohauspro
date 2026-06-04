@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>ТехноХаус PRO — Полный функционал</title>
+    <script src="https://api-maps.yandex.ru/2.1/?apikey=ваш_ключ_яндекс_карт&lang=ru_RU" type="text/javascript"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+        body { background: #f4f6fa; }
+        .header { background: #0b1120; color: white; padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 14px rgba(0,0,0,0.08); }
+        .logo { font-size: 28px; font-weight: 800; } .logo span { color: #3b82f6; }
+        .search-box { flex: 1; max-width: 500px; position: relative; }
+        .search-box input { width: 100%; padding: 12px 20px; border: none; border-radius: 40px; font-size: 16px; background: #1e293b; color: white; }
+        .search-box input::placeholder { color: #94a3b8; }
+        .search-results { position: absolute; top: 100%; left: 0; right: 0; background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-height: 400px; overflow-y: auto; display: none; z-index: 1000; }
+        .user-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .action-btn { background: #1e293b; color: white; border: none; padding: 10px 20px; border-radius: 40px; cursor: pointer; font-weight: 500; transition: 0.2s; }
+        .action-btn:hover { background: #3b82f6; transform: translateY(-2px); }
+        .logout-btn { background: #e11d48; }
+        .cart-count, .favorite-count { background: #e11d48; border-radius: 30px; padding: 2px 10px; font-size: 13px; margin-left: 6px; }
+        .admin-panel-container { display: flex; min-height: calc(100vh - 74px); }
+        .admin-sidebar { width: 280px; background: #0b1120; color: white; padding: 28px 16px; }
+        .admin-sidebar button { background: #1e293b; border: none; padding: 12px 20px; margin-bottom: 12px; border-radius: 14px; cursor: pointer; width: 100%; text-align: left; color: white; font-weight: 500; transition: 0.2s; }
+        .admin-sidebar button:hover { background: #3b82f6; transform: translateX(6px); }
+        .admin-content { flex: 1; padding: 28px; background: #f1f5f9; overflow-y: auto; }
+        .catalog-user-view { max-width: 1600px; margin: 0 auto; padding: 24px 32px; }
+        .categories { background: white; padding: 16px 24px; display: flex; gap: 12px; flex-wrap: wrap; border-radius: 40px; margin-bottom: 28px; }
+        .category-btn { background: #f1f5f9; border: none; padding: 10px 28px; border-radius: 40px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .category-btn.active, .category-btn:hover { background: #0b1120; color: white; }
+        .main-content { display: flex; gap: 32px; flex-wrap: wrap; }
+        .filters { width: 340px; background: white; padding: 20px; border-radius: 32px; position: sticky; top: 20px; max-height: calc(100vh - 100px); overflow-y: auto; z-index: 10; }
+        .filter-group { margin-bottom: 24px; border-bottom: 1px solid #e9eef3; padding-bottom: 16px; }
+        .filter-group-title { font-weight: 800; margin-bottom: 12px; color: #0f172a; font-size: 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .filter-group-title:hover { color: #3b82f6; }
+        .filter-search { width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 40px; margin-bottom: 10px; font-size: 12px; }
+        .filter-options-list { max-height: 180px; overflow-y: auto; padding-right: 5px; display: none; }
+        .filter-options-list.open { display: block; }
+        .filter-option { margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+        .filter-option label { font-size: 12px; cursor: pointer; color: #334155; }
+        .price-inputs { display: flex; gap: 10px; align-items: center; }
+        .price-inputs input { width: 90px; padding: 8px; border: 1px solid #e2e8f0; border-radius: 40px; text-align: center; font-size: 13px; }
+        .apply-filter-btn, .reset-filters-btn { background: #3b82f6; color: white; border: none; padding: 10px; border-radius: 44px; font-weight: bold; width: 100%; margin-top: 10px; cursor: pointer; font-size: 14px; }
+        .reset-filters-btn { background: #64748b; margin-top: 6px; }
+        .products-section { flex: 1; }
+        .products-header { display: flex; justify-content: space-between; background: white; padding: 14px 20px; border-radius: 48px; margin-bottom: 24px; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 24px; }
+        .product-card { background: white; border-radius: 28px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: 0.25s; cursor: pointer; position: relative; }
+        .product-card:hover { transform: translateY(-6px); box-shadow: 0 20px 30px -12px rgba(0,0,0,0.15); }
+        .product-image { width: 100%; height: 190px; object-fit: contain; padding: 16px; background: #fafcff; }
+        .product-info { padding: 14px; }
+        .product-name { font-weight: 800; font-size: 15px; margin-bottom: 5px; color: #0f172a; }
+        .product-price { color: #e11d48; font-size: 20px; font-weight: 800; margin: 6px 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .old-price { text-decoration: line-through; font-size: 14px; color: #94a3b8; font-weight: normal; }
+        .rating-buttons { display: flex; gap: 8px; margin: 8px 0 4px; }
+        .rating-btn { background: #f1f5f9; border: none; padding: 4px 12px; border-radius: 30px; cursor: pointer; font-size: 12px; transition: 0.2s; }
+        .rating-btn:hover { background: #3b82f6; color: white; }
+        .rating-btn.voted { background: #3b82f6; color: white; }
+        .product-actions { display: flex; gap: 10px; padding: 10px 14px 14px; border-top: 1px solid #eef2f6; }
+        .add-to-cart { background: #3b82f6; color: white; border: none; padding: 8px; border-radius: 40px; cursor: pointer; font-weight: 600; flex: 2; font-size: 13px; }
+        .add-to-favorite { background: #f1f5f9; border: none; padding: 8px; border-radius: 40px; cursor: pointer; font-size: 16px; flex: 1; }
+        .badge { background: #f97316; color: white; padding: 2px 8px; border-radius: 40px; font-size: 9px; font-weight: 700; margin-left: 6px; }
+        .modal, .stores-modal, .compare-bar, .profile-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; overflow-y: auto; }
+        .modal-content, .stores-content, .profile-content { background: white; width: 95%; max-width: 1200px; margin: 40px auto; border-radius: 48px; padding: 40px; }
+        .profile-content { max-width: 700px; }
+        .product-detail { display: grid; grid-template-columns: 350px 1fr; gap: 40px; margin-bottom: 40px; }
+        .product-detail-image { width: 100%; height: 320px; object-fit: contain; background: #f8fafc; border-radius: 28px; padding: 20px; }
+        .specs-table { width: 100%; border-collapse: collapse; background: #f8fafc; border-radius: 20px; overflow: hidden; }
+        .specs-table td { padding: 12px 14px; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
+        .specs-table td:first-child { font-weight: 700; width: 180px; background: #f1f5f9; }
+        .similar-item { background: white; border-radius: 20px; padding: 12px; border: 1px solid #e2e8f0; transition: 0.2s; cursor: pointer; width: 220px; }
+        .similar-item:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+        .cart-item { display: flex; align-items: center; gap: 16px; padding: 14px; border-bottom: 1px solid #e2e8f0; flex-wrap: wrap; }
+        .cart-total { font-size: 20px; font-weight: bold; text-align: right; margin: 16px 0; padding: 16px; background: #f8fafc; border-radius: 24px; }
+        .stores-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 32px; }
+        .stores-list { background: #f8fafc; border-radius: 32px; padding: 20px; height: 500px; overflow-y: auto; }
+        .store-item { background: white; border-radius: 24px; padding: 16px; margin-bottom: 14px; cursor: pointer; border: 1px solid #e2e8f0; transition: 0.2s; }
+        .store-item:hover { border-color: #3b82f6; transform: translateX(5px); }
+        #map { width: 100%; height: 500px; border-radius: 32px; }
+        .compare-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); padding: 10px 24px; display: none; justify-content: space-between; align-items: center; z-index: 1500; }
+        .compare-item { display: flex; align-items: center; gap: 10px; background: #eef2ff; border-radius: 60px; padding: 4px 14px; }
+        .admin-table { width: 100%; border-collapse: collapse; background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .admin-table th { background: #0f172a; color: white; padding: 14px 12px; text-align: left; font-size: 13px; font-weight: 600; }
+        .admin-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 13px; vertical-align: middle; }
+        .admin-table tr:hover { background: #f8fafc; }
+        .search-hidden { display: none !important; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .form-field { margin-bottom: 16px; }
+        .form-field label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 13px; color: #0f172a; }
+        .form-field input, .form-field select, .form-field textarea { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 28px; font-size: 14px; transition: 0.2s; }
+        .form-field input:focus, .form-field select:focus, .form-field textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+        .discount-buttons { display: flex; gap: 12px; margin-top: 8px; }
+        .discount-btn { flex: 1; background: #f1f5f9; border: 1px solid #e2e8f0; padding: 10px; border-radius: 40px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+        .discount-btn:hover, .discount-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
+        .image-preview { margin-top: 12px; text-align: center; }
+        .image-preview img { max-width: 120px; border-radius: 16px; border: 1px solid #e2e8f0; padding: 8px; background: #f8fafc; }
+        .price-preview { background: #f1f5f9; padding: 12px; border-radius: 28px; margin-top: 16px; text-align: center; font-weight: 600; font-size: 16px; }
+        .notification { position: fixed; bottom: 20px; right: 20px; background: #3b82f6; color: white; padding: 12px 24px; border-radius: 40px; z-index: 3000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); animation: fadeInOut 4s ease forwards; }
+        @keyframes fadeInOut { 0% { opacity: 0; transform: translateY(20px); } 10% { opacity: 1; transform: translateY(0); } 90% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+        .complaint-card { background: #f8fafc; border-radius: 24px; padding: 20px; margin-bottom: 20px; border-left: 4px solid #3b82f6; }
+        .answer-box { margin-top: 12px; padding: 12px; background: #eef2ff; border-radius: 20px; }
+        .edit-btn { background: #3b82f6; color: white; border: none; padding: 6px 16px; border-radius: 30px; cursor: pointer; font-size: 12px; transition: 0.2s; }
+        .edit-btn:hover { background: #2563eb; transform: translateY(-1px); }
+        .delete-btn { background: #e11d48; color: white; border: none; padding: 6px 16px; border-radius: 30px; cursor: pointer; font-size: 12px; margin-left: 8px; transition: 0.2s; }
+        .delete-btn:hover { background: #be123c; }
+        .view-btn { background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 30px; cursor: pointer; font-size: 11px; transition: 0.2s; margin-right: 8px; }
+        .view-btn:hover { background: #059669; transform: translateY(-1px); }
+        .backup-btn { background: #8b5cf6; color: white; border: none; padding: 10px 16px; border-radius: 40px; cursor: pointer; font-size: 13px; margin-right: 10px; transition: 0.2s; }
+        .backup-btn:hover { background: #7c3aed; transform: translateY(-2px); }
+        @media (max-width: 900px) { .product-detail { grid-template-columns: 1fr; } .filters { width: 100%; } .stores-grid { grid-template-columns: 1fr; } .form-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+<div class="header">
+    <div class="logo">Техно<span>Хаус</span> Pro</div>
+    <div class="search-box" id="catalogSearchBox">
+        <input type="text" id="globalSearchInput" placeholder="🔍 Поиск товаров по названию или бренду...">
+        <div class="search-results" id="globalSearchResults"></div>
+    </div>
+    <div class="user-actions" id="userActions">
+        <button class="action-btn" onclick="openStores()">🗺️ Магазины</button>
+        <button class="action-btn" id="cartBtn" onclick="openCart()">🛒 Корзина <span class="cart-count" id="cartCount">0</span></button>
+        <button class="action-btn" id="favBtn" onclick="openFavorites()">❤️ Избранное <span class="favorite-count" id="favoriteCount">0</span></button>
+        <button class="action-btn" id="authBtn" onclick="openAuthModal()">👤 Войти</button>
+    </div>
+</div>
+
+<div id="adminPanelContainer" style="display: none;"><div class="admin-panel-container"><div class="admin-sidebar" id="adminSidebar"></div><div class="admin-content" id="adminContent"></div></div></div>
+<div id="catalogUserView"><div class="categories" id="categoriesContainer"></div><div class="main-content"><div class="filters" id="filtersContainer"></div><div class="products-section"><div class="products-header"><span>📦 Найдено: <span id="productsCount">0</span></span><select id="sortSelect" onchange="sortProducts(this.value)" style="padding:6px 16px;border-radius:40px;"><option value="default">По умолчанию</option><option value="priceAsc">Цена ↑</option><option value="priceDesc">Цена ↓</option><option value="ratingDesc">Рейтинг ↓</option></select></div><div class="products-grid" id="productsGrid"></div></div></div></div>
+
+<div id="productModal" class="modal"><div class="modal-content"><div style="display:flex;justify-content:space-between"><h2>Детали товара</h2><span onclick="closeModal()" style="font-size:42px;cursor:pointer">&times;</span></div><div id="productDetail"></div><div id="similarProducts" style="margin-top: 40px;"></div></div></div>
+<div id="cartModal" class="modal"><div class="modal-content" style="max-width:900px"><div style="display:flex;justify-content:space-between"><h2>🛒 Корзина</h2><span onclick="closeCart()" style="font-size:42px;cursor:pointer">&times;</span></div><div id="cartItems"></div><div id="cartTotal" class="cart-total"></div><button class="apply-filter-btn" onclick="openCheckoutModal()">Перейти к оформлению</button></div></div>
+<div id="checkoutModal" class="modal"><div class="modal-content" style="max-width:700px"><div style="display:flex;justify-content:space-between"><h2>🛍️ Оформление заказа</h2><span onclick="closeCheckoutModal()" style="font-size:42px;cursor:pointer">&times;</span></div><div id="checkoutBody"></div></div></div>
+<div id="favoriteModal" class="modal"><div class="modal-content" style="max-width:900px"><div style="display:flex;justify-content:space-between"><h2>❤️ Избранное</h2><span onclick="closeFavorites()" style="font-size:42px;cursor:pointer">&times;</span></div><div id="favoriteItems"></div></div></div>
+<div id="storesModal" class="stores-modal"><div class="stores-content"><div style="display:flex;justify-content:space-between"><h2>📍 Наши магазины (15 точек)</h2><span onclick="closeStores()" style="font-size:42px;cursor:pointer">&times;</span></div><div class="stores-grid"><div id="storesList" class="stores-list"></div><div id="map"></div></div></div></div>
+<div id="compareBar" class="compare-bar"><div id="compareProducts"></div><button class="action-btn" onclick="compareProducts()">Сравнить</button></div>
+<div id="authModal" class="modal"><div class="modal-content" style="max-width:480px"><div style="display:flex;justify-content:space-between"><h2>Вход</h2><span onclick="closeAuthModal()" style="font-size:42px;cursor:pointer">&times;</span></div><div id="loginForm"><input type="text" id="loginUsername" placeholder="Логин" style="width:100%;padding:12px;margin:10px 0;border-radius:40px;"><input type="password" id="loginPassword" placeholder="Пароль" style="width:100%;padding:12px;margin:10px 0;border-radius:40px;"><button class="apply-filter-btn" onclick="login()">Войти</button><div onclick="showRegister()" style="text-align:center;margin-top:14px;color:#3b82f6;cursor:pointer">Нет аккаунта? Регистрация</div></div><div id="registerForm" style="display:none"><input type="text" id="regUsername" placeholder="Логин"><input type="password" id="regPassword" placeholder="Пароль"><input type="text" id="regName" placeholder="Имя"><input type="email" id="regEmail" placeholder="Email"><input type="tel" id="regPhone" placeholder="Телефон (10 цифр)"><button class="apply-filter-btn" onclick="register()">Зарегистрироваться</button><div onclick="showLogin()" style="text-align:center;margin-top:14px;color:#3b82f6;cursor:pointer">Вход</div></div></div></div>
+<div id="supportModal" class="modal"><div class="modal-content" style="max-width:550px;"><div style="display:flex;justify-content:space-between"><h2>📞 Служба поддержки</h2><span onclick="closeSupportModal()" style="font-size:42px;cursor:pointer">&times;</span></div><div id="supportBody"></div></div></div>
+<div id="profileModal" class="profile-modal"><div class="profile-content"><div style="display:flex;justify-content:space-between"><h2>👤 Мой профиль</h2><span onclick="closeProfileModal()" style="font-size:42px;cursor:pointer">&times;</span></div><div id="profileBody"></div></div></div>
+<div id="formModal" class="modal form-modal"><div class="modal-content" style="max-width:800px;"><div style="display:flex;justify-content:space-between"><h2 id="formModalTitle"></h2><span onclick="closeFormModal()" style="font-size:42px;cursor:pointer">&times;</span></div><div id="formModalBody" style="max-height:70vh; overflow-y:auto; padding-right:15px;"></div></div></div>
+<div id="orderItemsModal" class="modal"><div class="modal-content" style="max-width:700px;"><div style="display:flex;justify-content:space-between"><h2>📦 Товары в заказе</h2><span onclick="closeOrderItemsModal()" style="font-size:42px;cursor:pointer">&times;</span></div><div id="orderItemsBody"></div></div></div>
+
+<script>
+    // ======================= ДАННЫЕ ДЛЯ ФИЛЬТРОВ И ХАРАКТЕРИСТИК =======================
+    const filterData = {
+        notebooks: {
+            brands: ['ACER','APPLE','ASUS','DELL','HP','LENOVO','MSI','SAMSUNG'],
+            cpuSeries: ['Core i5','Core i7','Ryzen 5','Ryzen 7','Core i9','Ryzen 9'],
+            ram: ['8 ГБ','16 ГБ','32 ГБ','64 ГБ'],
+            diagonal: ['13.3"','14"','15.6"','17.3"'],
+            gpu: ['Intel Iris Xe','NVIDIA RTX 3050','NVIDIA RTX 4060','NVIDIA RTX 4070'],
+            ssd: ['256 ГБ','512 ГБ','1 ТБ','2 ТБ'],
+            cpuModel: ['Intel Core i5-12450H','Intel Core i7-13700H','AMD Ryzen 7 7840HS','AMD Ryzen 9 7945HX'],
+            os: ['Windows 11 Home','Windows 11 Pro','FreeDOS','Linux'],
+            cores: ['4-ядерный','6-ядерный','8-ядерный','10-ядерный','12-ядерный'],
+            resolution: ['1920x1080','2560x1440','2880x1800','3840x2160'],
+            matrix: ['IPS','OLED','TN'],
+            gpuType: ['дискретный','интегрированный']
+        },
+        smartphones: {
+            brands: ['APPLE','SAMSUNG','XIAOMI','HONOR','GOOGLE','ONEPLUS'],
+            series: ['iPhone 15','iPhone 16','Galaxy S24','Galaxy S25','Xiaomi 14','Pixel 8'],
+            storage: ['128 ГБ','256 ГБ','512 ГБ','1 ТБ'],
+            ram: ['6 ГБ','8 ГБ','12 ГБ','16 ГБ'],
+            battery: ['4000-4999 мАч','5000-5999 мАч','6000+ мАч'],
+            cpuBrand: ['Apple','Qualcomm','MediaTek','Samsung'],
+            cpuModel: ['A16 Bionic','A18 Pro','Snapdragon 8 Gen 3','Dimensity 9300','Exynos 2400'],
+            diagonal: ['6.1"','6.7"','6.8"','6.9"'],
+            screenType: ['AMOLED','OLED','IPS'],
+            camera: ['50 Mpix','108 Mpix','200 Mpix','48 Mpix'],
+            resolution: ['2340x1080','2778x1284','3120x1440','3200x1440'],
+            features: ['защита от воды','ударопрочный корпус','беспроводная зарядка']
+        },
+        tvs: {
+            brands: ['LG','SAMSUNG','SONY','TCL','XIAOMI','HISENSE'],
+            diagonal: ['43"','50"','55"','65"','75"','85"'],
+            refreshRate: ['60 Гц','120 Гц','144 Гц','240 Гц'],
+            resolution: ['4K Ultra HD','8K Ultra HD'],
+            screenTech: ['OLED','QLED','Mini-LED','LED'],
+            os: ['webOS','Tizen','Google TV','Android TV'],
+            ram: ['2 ГБ','3 ГБ','4 ГБ','8 ГБ'],
+            brightness: ['300 кд/м2','500 кд/м2','1000 кд/м2','2000 кд/м2'],
+            color: ['черный','серебристый','белый'],
+            voiceAssistants: ['Алиса','Google Assistant','Alexa','Siri'],
+            ports: ['HDMI 2.1','USB 3.0','Ethernet','Optical']
+        },
+        computers: {
+            brands: ['ACER','DELL','HP','LENOVO','APPLE','ASUS','MSI'],
+            cpuSeries: ['Core i5','Core i7','Ryzen 5','Ryzen 7','Core i9','Ryzen 9','M4'],
+            ram: ['8 ГБ','16 ГБ','32 ГБ','64 ГБ','128 ГБ'],
+            cpuModel: ['Intel Core i5-13400','Intel Core i7-14700K','AMD Ryzen 7 7800X3D','AMD Ryzen 9 7950X','Apple M4'],
+            os: ['Windows 11 Home','Windows 11 Pro','macOS','FreeDOS'],
+            gpu: ['NVIDIA RTX 3060','NVIDIA RTX 4070','NVIDIA RTX 4090','AMD Radeon RX 7800 XT','Intel UHD'],
+            ssd: ['256 ГБ','512 ГБ','1 ТБ','2 ТБ','4 ТБ'],
+            gpuSeries: ['RTX 30xx','RTX 40xx','RX 7000'],
+            type: ['Системный блок','Мини ПК','Рабочая станция','Моноблок'],
+            gpuType: ['дискретный','интегрированный'],
+            vram: ['4 ГБ','8 ГБ','12 ГБ','16 ГБ','24 ГБ'],
+            cpuLine: ['Intel 12xxx','Intel 13xxx','Intel 14xxx','AMD Ryzen 7000','AMD Ryzen 9000'],
+            cores: ['4-ядерный','6-ядерный','8-ядерный','12-ядерный','16-ядерный','24-ядерный']
+        },
+        monitors: {
+            brands: ['ASUS','DELL','LG','SAMSUNG','AOC','MSI','PHILIPS'],
+            diagonal: ['24"','27"','32"','34"','49"'],
+            resolution: ['1920x1080','2560x1440','3440x1440','3840x2160','5120x1440'],
+            refreshRate: ['60 Гц','144 Гц','165 Гц','240 Гц','360 Гц'],
+            matrix: ['IPS','VA','OLED','TN'],
+            matrixRes: ['FULL HD','2K','4K','5K'],
+            ports: ['HDMI','DisplayPort','USB-C','USB Hub'],
+            features: ['HDR','игровой режим','регулировка высоты','поворот','FreeSync','G-Sync'],
+            responseTime: ['1 мс','0.5 мс','0.03 мс','4 мс'],
+            aspectRatio: ['16:9','21:9','32:9'],
+            ergonomics: ['регулировка высоты','поворот','наклон'],
+            purpose: ['для геймеров','для дизайнеров','для офиса']
+        },
+        projectors: {
+            brands: ['EPSON','BENQ','XGIMI','LG','SONY','VIEWSONIC'],
+            resolution: ['1920x1080','3840x2160','4096x2160'],
+            brightness: ['2000-3000 lm','3000-4000 lm','4000-5000 lm','более 5000 lm'],
+            features: ['WiFi','Bluetooth','встроенные динамики','3D','4K'],
+            technology: ['DLP','3LCD','Laser'],
+            throwRatio: ['стандартные','короткофокусные','ультракороткофокусные'],
+            lampType: ['LED','Laser','Lamp'],
+            aspectRatio: ['16:9','16:10','4:3'],
+            projectorType: ['портативный','инсталляционный','домашний'],
+            contrast: ['10000:1','20000:1','30000:1','100000:1'],
+            ports: ['HDMI','USB','VGA','Audio Out']
+        }
+    };
+
+    // ======================= ТОВАРЫ С СОХРАНЕНИЕМ В LOCALSTORAGE =======================
+    let products = [];
+    const categories = ['notebooks','smartphones','tvs','computers','monitors','projectors'];
+    
+    function saveProductsToStorage() { localStorage.setItem('shop_products', JSON.stringify(products)); }
+    function loadProductsFromStorage() { const stored = localStorage.getItem('shop_products'); if (stored && stored !== 'undefined') { products = JSON.parse(stored); return true; } return false; }
+    
+    function generateInitialProducts() {
+        for(let i=1; i<=55; i++) {
+            let cat = categories[i % categories.length];
+            let brand = (filterData[cat]?.brands?.[i % filterData[cat].brands.length]) || 'ASUS';
+            let price = 15000 + i * 700;
+            let discount = i%7===0?10:(i%5===0?5:0);
+            let specs = {};
+            if(cat === 'notebooks') {
+                specs = { 'Бренд': brand, 'Серия процессора': filterData.notebooks.cpuSeries[i % filterData.notebooks.cpuSeries.length], 'Объем оперативной памяти': filterData.notebooks.ram[i % filterData.notebooks.ram.length], 'Диагональ экрана': filterData.notebooks.diagonal[i % filterData.notebooks.diagonal.length], 'Модель видеокарты': filterData.notebooks.gpu[i % filterData.notebooks.gpu.length], 'Объем SSD': filterData.notebooks.ssd[i % filterData.notebooks.ssd.length], 'Модель процессора': filterData.notebooks.cpuModel[i % filterData.notebooks.cpuModel.length], 'Операционная система': filterData.notebooks.os[i % filterData.notebooks.os.length], 'Количество ядер процессора': filterData.notebooks.cores[i % filterData.notebooks.cores.length], 'Разрешение экрана': filterData.notebooks.resolution[i % filterData.notebooks.resolution.length], 'Тип матрицы': filterData.notebooks.matrix[i % filterData.notebooks.matrix.length], 'Тип видеокарты': filterData.notebooks.gpuType[i % filterData.notebooks.gpuType.length] };
+            } else if(cat === 'smartphones') {
+                specs = { 'Бренд': brand, 'Серия': filterData.smartphones.series[i % filterData.smartphones.series.length], 'Встроенная память': filterData.smartphones.storage[i % filterData.smartphones.storage.length], 'Оперативная память': filterData.smartphones.ram[i % filterData.smartphones.ram.length], 'Емкость батареи': filterData.smartphones.battery[i % filterData.smartphones.battery.length], 'Производитель процессора': filterData.smartphones.cpuBrand[i % filterData.smartphones.cpuBrand.length], 'Наименование процессора': filterData.smartphones.cpuModel[i % filterData.smartphones.cpuModel.length], 'Диагональ экрана': filterData.smartphones.diagonal[i % filterData.smartphones.diagonal.length], 'Тип экрана': filterData.smartphones.screenType[i % filterData.smartphones.screenType.length], 'Разрешение основной камеры': filterData.smartphones.camera[i % filterData.smartphones.camera.length], 'Разрешение экрана': filterData.smartphones.resolution[i % filterData.smartphones.resolution.length], 'Особенности': filterData.smartphones.features[i % filterData.smartphones.features.length] };
+            } else if(cat === 'tvs') {
+                specs = { 'Бренд': brand, 'Диагональ': filterData.tvs.diagonal[i % filterData.tvs.diagonal.length], 'Частота обновления': filterData.tvs.refreshRate[i % filterData.tvs.refreshRate.length], 'Разрешение экрана': filterData.tvs.resolution[i % filterData.tvs.resolution.length], 'Технология экрана': filterData.tvs.screenTech[i % filterData.tvs.screenTech.length], 'Операционная система': filterData.tvs.os[i % filterData.tvs.os.length], 'Объем ОЗУ': filterData.tvs.ram[i % filterData.tvs.ram.length], 'Яркость': filterData.tvs.brightness[i % filterData.tvs.brightness.length], 'Цвет': filterData.tvs.color[i % filterData.tvs.color.length], 'Голосовые ассистенты': filterData.tvs.voiceAssistants[i % filterData.tvs.voiceAssistants.length], 'Порты': filterData.tvs.ports[i % filterData.tvs.ports.length] };
+            } else if(cat === 'computers') {
+                specs = { 'Бренд': brand, 'Серия процессора': filterData.computers.cpuSeries[i % filterData.computers.cpuSeries.length], 'Объем ОЗУ': filterData.computers.ram[i % filterData.computers.ram.length], 'Модель процессора': filterData.computers.cpuModel[i % filterData.computers.cpuModel.length], 'Операционная система': filterData.computers.os[i % filterData.computers.os.length], 'Модель видеокарты': filterData.computers.gpu[i % filterData.computers.gpu.length], 'Объем SSD': filterData.computers.ssd[i % filterData.computers.ssd.length], 'Тип': filterData.computers.type[i % filterData.computers.type.length], 'Объем видеопамяти': filterData.computers.vram[i % filterData.computers.vram.length], 'Линейка процессора': filterData.computers.cpuLine[i % filterData.computers.cpuLine.length], 'Количество ядер': filterData.computers.cores[i % filterData.computers.cores.length] };
+            } else if(cat === 'monitors') {
+                specs = { 'Бренд': brand, 'Диагональ': filterData.monitors.diagonal[i % filterData.monitors.diagonal.length], 'Разрешение': filterData.monitors.resolution[i % filterData.monitors.resolution.length], 'Частота обновления': filterData.monitors.refreshRate[i % filterData.monitors.refreshRate.length], 'Тип матрицы': filterData.monitors.matrix[i % filterData.monitors.matrix.length], 'Порты': filterData.monitors.ports[i % filterData.monitors.ports.length], 'Особенности': filterData.monitors.features[i % filterData.monitors.features.length], 'Время отклика': filterData.monitors.responseTime[i % filterData.monitors.responseTime.length], 'Соотношение сторон': filterData.monitors.aspectRatio[i % filterData.monitors.aspectRatio.length], 'Назначение': filterData.monitors.purpose[i % filterData.monitors.purpose.length] };
+            } else if(cat === 'projectors') {
+                specs = { 'Бренд': brand, 'Разрешение': filterData.projectors.resolution[i % filterData.projectors.resolution.length], 'Яркость': filterData.projectors.brightness[i % filterData.projectors.brightness.length], 'Особенности': filterData.projectors.features[i % filterData.projectors.features.length], 'Технология': filterData.projectors.technology[i % filterData.projectors.technology.length], 'Тип лампы': filterData.projectors.lampType[i % filterData.projectors.lampType.length], 'Соотношение сторон': filterData.projectors.aspectRatio[i % filterData.projectors.aspectRatio.length], 'Тип проектора': filterData.projectors.projectorType[i % filterData.projectors.projectorType.length], 'Контрастность': filterData.projectors.contrast[i % filterData.projectors.contrast.length] };
+            }
+            products.push({ 
+                id:i, name:`${brand} ${cat} ${i}`, originalPrice: price, price: discount ? Math.round(price*(100-discount)/100) : price, category:cat, brand:brand, 
+                rating:4.0 + (i%10)/10, inStock:true, discount:discount, 
+                installment:true, isNew:false, image:'https://avatars.mds.yandex.net/get-mpic/5238882/img_id7129462892158577910.jpeg/orig',
+                description:`Отличный ${cat} от ${brand} с передовыми характеристиками.`, specs:specs,
+                votes: { up: Math.floor(Math.random() * 20), down: Math.floor(Math.random() * 5) },
+                wholesale: false
+            });
+        }
+        saveProductsToStorage();
+    }
+    
+    if (!loadProductsFromStorage()) { generateInitialProducts(); }
+    
+    // Магазины
+    const storesList = [
+        { id:1, name: 'ТехноХаус Тверская', address: 'ул. Тверская, 15, Москва', phone: '+7 (495) 123-45-67', hours: '10:00-22:00', lat: 55.7658, lng: 37.6073 },
+        { id:2, name: 'ТехноХаус Авиапарк', address: 'Ходынский бульвар, 4, Москва', phone: '+7 (495) 234-56-78', hours: '10:00-23:00', lat: 55.7909, lng: 37.5378 },
+        { id:3, name: 'ТехноХаус СПб Невский', address: 'Невский пр., 114, Санкт-Петербург', phone: '+7 (812) 123-45-67', hours: '10:00-22:00', lat: 59.9311, lng: 30.3609 },
+        { id:4, name: 'ТехноХаус Екатеринбург', address: 'ул. Малышева, 23, Екатеринбург', phone: '+7 (343) 222-33-44', hours: '09:00-21:00', lat: 56.8389, lng: 60.5977 },
+        { id:5, name: 'ТехноХаус Новосибирск', address: 'Красный пр., 50, Новосибирск', phone: '+7 (383) 555-66-77', hours: '10:00-20:00', lat: 55.0302, lng: 82.9204 },
+        { id:6, name: 'ТехноХаус Казань', address: 'ул. Баумана, 40, Казань', phone: '+7 (843) 300-11-22', hours: '11:00-21:00', lat: 55.7961, lng: 49.1081 },
+        { id:7, name: 'ТехноХаус Нижний Новгород', address: 'ул. Большая Покровская, 15', phone: '+7 (831) 400-55-66', hours: '10:00-20:00', lat: 56.3269, lng: 44.0059 },
+        { id:8, name: 'ТехноХаус Челябинск', address: 'пр. Ленина, 60', phone: '+7 (351) 777-88-99', hours: '10:00-21:00', lat: 55.1644, lng: 61.4368 },
+        { id:9, name: 'ТехноХаус Самара', address: 'ул. Молодогвардейская, 142', phone: '+7 (846) 333-44-55', hours: '10:00-20:00', lat: 53.1959, lng: 50.1002 },
+        { id:10, name: 'ТехноХаус Ростов-на-Дону', address: 'ул. Большая Садовая, 42', phone: '+7 (863) 222-33-44', hours: '09:00-21:00', lat: 47.2225, lng: 39.7187 },
+        { id:11, name: 'ТехноХаус Уфа', address: 'пр. Октября, 78', phone: '+7 (347) 123-45-67', hours: '10:00-22:00', lat: 54.7348, lng: 55.9579 },
+        { id:12, name: 'ТехноХаус Красноярск', address: 'ул. Мира, 88', phone: '+7 (391) 200-11-22', hours: '10:00-20:00', lat: 56.0106, lng: 92.8526 },
+        { id:13, name: 'ТехноХаус Пермь', address: 'ул. Ленина, 25', phone: '+7 (342) 500-66-77', hours: '11:00-21:00', lat: 58.0105, lng: 56.2505 },
+        { id:14, name: 'ТехноХаус Волгоград', address: 'пр. Ленина, 30', phone: '+7 (844) 555-66-77', hours: '10:00-20:00', lat: 48.7080, lng: 44.5133 },
+        { id:15, name: 'ТехноХаус Воронеж', address: 'ул. Плехановская, 10', phone: '+7 (473) 333-55-88', hours: '10:00-21:00', lat: 51.6605, lng: 39.2003 }
+    ];
+    
+    // Жалобы, уведомления, пользовательские данные
+    let complaints = JSON.parse(localStorage.getItem('complaints')) || [];
+    let userNotifications = JSON.parse(localStorage.getItem('userNotifications')) || {};
+    let currentUser = null, currentCart = [], currentFavorites = [], userVotes = {};
+    
+    // Базовые функции пользователя
+    function getUsers() { return JSON.parse(localStorage.getItem('users')) || []; }
+    function saveUsers(u) { localStorage.setItem('users', JSON.stringify(u)); }
+    function getOrders() { return JSON.parse(localStorage.getItem('orders')) || []; }
+    function saveOrders(o) { localStorage.setItem('orders', JSON.stringify(o)); }
+    function initDB() { if(!localStorage.getItem('users')) saveUsers([{ id:1, username:'admin', password:'admin123', name:'Администратор', email:'admin@shop.ru', phone:'1234567890', role:'admin' },{ id:2, username:'manager', password:'manager123', name:'Менеджер', email:'manager@shop.ru', phone:'0987654321', role:'manager' }]); if(!localStorage.getItem('orders')) saveOrders([]); }
+    function validateEmail(e){ return e && e.includes('@'); }
+    function validatePhone(p){ return p && /^\d{10}$/.test(p); }
+    function register(){ let users=getUsers(); let email=document.getElementById('regEmail').value; let phone=document.getElementById('regPhone').value; if(!validateEmail(email)){ alert('Email должен содержать @'); return; } if(!validatePhone(phone)){ alert('Телефон 10 цифр'); return; } let uname=document.getElementById('regUsername').value; if(users.find(u=>u.username===uname)){ alert('Логин занят'); return; } users.push({ id:users.length+1, username:uname, password:document.getElementById('regPassword').value, name:document.getElementById('regName').value, email, phone, role:'user' }); saveUsers(users); alert('Регистрация успешна'); showLogin(); }
+    function login(){ let users=getUsers(); let user=users.find(u=>u.username===document.getElementById('loginUsername').value && u.password===document.getElementById('loginPassword').value); if(!user){ alert('Неверно'); return; } if(currentUser) saveUserData(); currentUser=user; loadUserData(); closeAuthModal(); updateUI(); renderFilters(); applyFilters(); checkAndShowNotifications(); }
+    function logout() { if(currentUser) saveUserData(); currentUser=null; loadUserData(); updateUI(); document.getElementById('adminPanelContainer').style.display='none'; document.getElementById('catalogUserView').style.display='block'; document.getElementById('catalogSearchBox').classList.remove('search-hidden'); alert('Вы вышли'); renderFilters(); applyFilters(); }
+    function getUserDataKey(id) { return `user_data_${id}`; }
+    function getGuestKey() { return 'guest_data'; }
+    function loadUserData() {
+        if (currentUser) {
+            const data = localStorage.getItem(getUserDataKey(currentUser.id));
+            if (data) { const p = JSON.parse(data); currentCart = p.cart || []; currentFavorites = p.favorites || []; userVotes = p.votes || {}; }
+            else { currentCart = []; currentFavorites = []; userVotes = {}; }
+        } else {
+            const guest = sessionStorage.getItem(getGuestKey());
+            if (guest) { const p = JSON.parse(guest); currentCart = p.cart || []; currentFavorites = p.favorites || []; userVotes = p.votes || {}; }
+            else { currentCart = []; currentFavorites = []; userVotes = {}; }
+        }
+        updateCounters(); renderCartModal(); updateProductsGrid();
+    }
+    function saveUserData() { const data = { cart: currentCart, favorites: currentFavorites, votes: userVotes }; if (currentUser) localStorage.setItem(getUserDataKey(currentUser.id), JSON.stringify(data)); else sessionStorage.setItem(getGuestKey(), JSON.stringify(data)); }
+    function updateCounters() { document.getElementById('cartCount').innerText = currentCart.reduce((s,i)=>s+i.quantity,0); document.getElementById('favoriteCount').innerText = currentFavorites.length; }
+    function addToCart(id) { let p=products.find(x=>x.id===id); let item=currentCart.find(i=>i.id===id); if(item) item.quantity++; else currentCart.push({id, name:p.name, price:p.price, image:p.image, quantity:1}); saveUserData(); updateCounters(); renderCartModal(); updateProductsGrid(); }
+    function removeFromCart(id) { currentCart=currentCart.filter(i=>i.id!==id); saveUserData(); updateCounters(); renderCartModal(); updateProductsGrid(); }
+    function changeQuantity(id, delta) { let i=currentCart.find(x=>x.id===id); if(i){ i.quantity+=delta; if(i.quantity<=0) currentCart=currentCart.filter(x=>x.id!==id); saveUserData(); updateCounters(); renderCartModal(); updateProductsGrid(); } }
+    function toggleFavorite(id) { let idx=currentFavorites.indexOf(id); idx===-1?currentFavorites.push(id):currentFavorites.splice(idx,1); saveUserData(); updateCounters(); updateProductsGrid(); }
+    function openCart() { renderCartModal(); document.getElementById('cartModal').style.display='block'; }
+    function closeCart() { document.getElementById('cartModal').style.display='none'; }
+    function renderCartModal() { let itemsDiv=document.getElementById('cartItems'); if(!currentCart.length){ itemsDiv.innerHTML='<p style="text-align:center;padding:40px">Корзина пуста</p>'; document.getElementById('cartTotal').innerHTML='Итого: 0 ₽'; return; } let total=0, html=''; currentCart.forEach(i=>{ let s=i.price*i.quantity; total+=s; html+=`<div class="cart-item"><img src="${i.image}" width="50"><div><b>${i.name}</b><br>${i.price.toLocaleString()} ₽</div><div><button onclick="changeQuantity(${i.id},-1)">-</button> ${i.quantity} <button onclick="changeQuantity(${i.id},1)">+</button></div><div>${s.toLocaleString()} ₽</div><button onclick="removeFromCart(${i.id})">✕</button></div>`; }); itemsDiv.innerHTML=html; document.getElementById('cartTotal').innerHTML=`Итого: ${total.toLocaleString()} ₽`; }
+    function openFavorites() { let html=''; currentFavorites.forEach(id=>{ let p=products.find(x=>x.id===id); if(p) html+=`<div class="cart-item"><img src="${p.image}" width="50"><div><b>${p.name}</b><br>${p.price.toLocaleString()} ₽</div><button class="action-btn" onclick="addToCart(${p.id});closeFavorites()">В корзину</button><button class="action-btn" onclick="toggleFavorite(${p.id});openFavorites()">✕</button></div>`; }); document.getElementById('favoriteItems').innerHTML=html||'<p style="text-align:center;padding:40px">Избранное пусто</p>'; document.getElementById('favoriteModal').style.display='block'; }
+    function closeFavorites() { document.getElementById('favoriteModal').style.display='none'; }
+    function voteProduct(productId, type) { if (!currentUser) { alert('Оценивать могут только зарегистрированные пользователи'); return; } let p=products.find(p=>p.id===productId); if(!p) return; let prev=userVotes[productId]; if(prev===type) return; if(prev==='up') p.votes.up--; else if(prev==='down') p.votes.down--; if(type==='up') p.votes.up++; else p.votes.down++; userVotes[productId]=type; let tot=p.votes.up+p.votes.down; p.rating=tot>0?Math.round((p.votes.up/tot)*4+1*10)/10:4.0; saveUserData(); updateProductsGrid(); if(document.getElementById('productModal').style.display==='block') openProductModal(productId); }
+    
+    // ФУНКЦИЯ ДЛЯ ГЕНЕРАЦИИ ФОРМЫ ХАРАКТЕРИСТИК
+    function getSpecsFormHTML(category, currentSpecs = {}) {
+        if(!filterData[category]) return '';
+        let html = '<div style="margin-top:20px; border-top:2px solid #e2e8f0; padding-top:20px;"><h3>📋 Характеристики товара</h3>';
+        for(let [key, values] of Object.entries(filterData[category])) {
+            if(key === 'brands') continue;
+            let displayKey = '';
+            switch(key) {
+                case 'cpuSeries': displayKey = 'Серия процессора'; break;
+                case 'ram': displayKey = 'Объем оперативной памяти'; break;
+                case 'diagonal': displayKey = 'Диагональ экрана'; break;
+                case 'gpu': displayKey = 'Модель видеокарты'; break;
+                case 'ssd': displayKey = 'Объем SSD'; break;
+                case 'cpuModel': displayKey = 'Модель процессора'; break;
+                case 'os': displayKey = 'Операционная система'; break;
+                case 'cores': displayKey = 'Количество ядер'; break;
+                case 'resolution': displayKey = 'Разрешение экрана'; break;
+                case 'matrix': displayKey = 'Тип матрицы'; break;
+                case 'gpuType': displayKey = 'Тип видеокарты'; break;
+                case 'storage': displayKey = 'Встроенная память'; break;
+                case 'battery': displayKey = 'Емкость батареи'; break;
+                case 'cpuBrand': displayKey = 'Производитель процессора'; break;
+                case 'screenType': displayKey = 'Тип экрана'; break;
+                case 'camera': displayKey = 'Камера'; break;
+                case 'features': displayKey = 'Особенности'; break;
+                case 'refreshRate': displayKey = 'Частота обновления'; break;
+                case 'screenTech': displayKey = 'Технология экрана'; break;
+                case 'brightness': displayKey = 'Яркость'; break;
+                case 'color': displayKey = 'Цвет'; break;
+                case 'voiceAssistants': displayKey = 'Голосовые помощники'; break;
+                case 'ports': displayKey = 'Порты'; break;
+                case 'gpuSeries': displayKey = 'Серия видеокарты'; break;
+                case 'type': displayKey = 'Тип'; break;
+                case 'vram': displayKey = 'Объем видеопамяти'; break;
+                case 'cpuLine': displayKey = 'Линейка процессора'; break;
+                case 'matrixRes': displayKey = 'Разрешение матрицы'; break;
+                case 'responseTime': displayKey = 'Время отклика'; break;
+                case 'aspectRatio': displayKey = 'Соотношение сторон'; break;
+                case 'ergonomics': displayKey = 'Эргономика'; break;
+                case 'purpose': displayKey = 'Назначение'; break;
+                case 'technology': displayKey = 'Технология'; break;
+                case 'throwRatio': displayKey = 'Проекционное отношение'; break;
+                case 'lampType': displayKey = 'Тип лампы'; break;
+                case 'projectorType': displayKey = 'Тип проектора'; break;
+                case 'contrast': displayKey = 'Контрастность'; break;
+                default: displayKey = key;
+            }
+            html += `<div class="form-field"><label>${displayKey}</label><select id="spec_${key}" style="width:100%; padding:12px; border:1px solid #e2e8f0; border-radius:28px;">${values.map(v => `<option value="${v}" ${currentSpecs[displayKey] === v ? 'selected' : ''}>${v}</option>`).join('')}</select></div>`;
+        }
+        html += '</div>';
+        return html;
+    }
+    
+    // ФИЛЬТРЫ
+    let filteredProducts = [...products], currentCategory = 'all', wholesalePriceEnabled = false, compareList = [];
+    
+    function renderFilters() {
+        let cat = currentCategory;
+        let html = `<div class="filter-group"><div class="filter-group-title" onclick="toggleFilterGroup(this)">💰 Цена</div><div class="filter-options-list"><div class="price-inputs"><input type="number" id="minPrice" placeholder="от" value="0"><span>-</span><input type="number" id="maxPrice" placeholder="до" value="500000"></div><div class="filter-option" style="margin-top:8px;"><input type="checkbox" id="wholesalePrice" onchange="toggleWholesaleFilter(this.checked)"> <label>Цена от поставщика (оптовая)</label></div></div></div>
+        <div class="filter-group"><div class="filter-group-title" onclick="toggleFilterGroup(this)">📦 Наличие</div><div class="filter-options-list"><div class="filter-option"><input type="checkbox" id="inStockOnly" onchange="applyFilters()"> <label>Только в наличии</label></div><div class="filter-option"><input type="checkbox" id="installmentGoods" onchange="applyFilters()"> <label>В рассрочку</label></div></div></div>
+        <div class="filter-group"><div class="filter-group-title" onclick="toggleFilterGroup(this)">🏷️ Товары со скидкой</div><div class="filter-options-list"><div class="filter-option"><input type="checkbox" value="5" onchange="applyFilters()" id="disc5"><label>5%</label></div><div class="filter-option"><input type="checkbox" value="10" onchange="applyFilters()" id="disc10"><label>10%</label></div><div class="filter-option"><input type="checkbox" value="20" onchange="applyFilters()" id="disc20"><label>20%</label></div></div></div>`;
+        
+        if(cat !== 'all' && filterData[cat]) {
+            for(let [key, values] of Object.entries(filterData[cat])) {
+                if(key === 'brands') {
+                    html += `<div class="filter-group"><div class="filter-group-title" onclick="toggleFilterGroup(this)">🏭 Бренд</div><div class="filter-options-list"><input type="text" id="brandSearch" placeholder="Найти бренд" class="filter-search"><div id="brandList" class="filter-options-list open" style="max-height:180px; overflow-y:auto;"></div></div></div>`;
+                } else {
+                    let title = '';
+                    switch(key) {
+                        case 'cpuSeries': title = '⚙️ Серия процессора'; break;
+                        case 'ram': title = '💾 ОЗУ'; break;
+                        case 'diagonal': title = '📏 Диагональ'; break;
+                        case 'gpu': title = '🎮 Видеокарта'; break;
+                        case 'ssd': title = '💽 SSD'; break;
+                        case 'cpuModel': title = '🔧 Процессор'; break;
+                        case 'os': title = '🖥️ ОС'; break;
+                        case 'cores': title = '⚡ Ядра'; break;
+                        case 'resolution': title = '📐 Разрешение'; break;
+                        case 'matrix': title = '🔲 Матрица'; break;
+                        case 'gpuType': title = '🎮 Тип видеокарты'; break;
+                        case 'storage': title = '💾 Память'; break;
+                        case 'battery': title = '🔋 Батарея'; break;
+                        case 'cpuBrand': title = '🏭 Процессор'; break;
+                        case 'screenType': title = '📱 Тип экрана'; break;
+                        case 'camera': title = '📸 Камера'; break;
+                        case 'features': title = '✨ Особенности'; break;
+                        case 'refreshRate': title = '⚡ Частота'; break;
+                        case 'screenTech': title = '🔲 Технология'; break;
+                        case 'brightness': title = '💡 Яркость'; break;
+                        case 'color': title = '🎨 Цвет'; break;
+                        case 'voiceAssistants': title = '🎤 Ассистенты'; break;
+                        case 'ports': title = '🔌 Порты'; break;
+                        default: title = key;
+                    }
+                    if(values && values.length) {
+                        html += `<div class="filter-group"><div class="filter-group-title" onclick="toggleFilterGroup(this)">${title}</div><div class="filter-options-list" id="filter_${key}"></div></div>`;
+                    }
+                }
+            }
+        }
+        html += `<button class="apply-filter-btn" onclick="applyFilters()">Применить</button><button class="reset-filters-btn" onclick="resetFilters()">Сбросить</button>`;
+        document.getElementById('filtersContainer').innerHTML = html;
+        
+        if(cat !== 'all' && filterData[cat] && filterData[cat].brands) {
+            document.getElementById('brandList').innerHTML = filterData[cat].brands.map(b=>`<div class="filter-option"><input type="checkbox" value="${b}" onchange="applyFilters()"><label>${b}</label></div>`).join('');
+            document.getElementById('brandSearch')?.addEventListener('input', e => { let v=e.target.value.toLowerCase(); document.querySelectorAll('#brandList .filter-option').forEach(opt=>{ opt.style.display=opt.innerText.toLowerCase().includes(v)?'flex':'none'; }); });
+        }
+        if(cat !== 'all' && filterData[cat]) {
+            for(let [key, values] of Object.entries(filterData[cat])) {
+                if(key !== 'brands' && document.getElementById(`filter_${key}`)) {
+                    document.getElementById(`filter_${key}`).innerHTML = values.map(v=>`<div class="filter-option"><input type="checkbox" value="${v}" onchange="applyFilters()"><label>${v}</label></div>`).join('');
+                }
+            }
+        }
+        document.querySelectorAll('.filter-options-list').forEach(el => el.classList.add('open'));
+    }
+    
+    function toggleFilterGroup(titleEl) { let list = titleEl.nextElementSibling; if(list) list.classList.toggle('open'); }
+    function toggleWholesaleFilter(checked) { wholesalePriceEnabled = checked; applyFilters(); }
+    function resetFilters() { document.querySelectorAll('#filtersContainer input[type="checkbox"]').forEach(cb => cb.checked = false); wholesalePriceEnabled = false; let min = document.getElementById('minPrice'); if(min) min.value = 0; let max = document.getElementById('maxPrice'); if(max) max.value = 500000; applyFilters(); }
+    
+    function getSpecKey(filterKey) {
+        const map = {
+            cpuSeries: 'Серия процессора', ram: 'Объем оперативной памяти', diagonal: 'Диагональ экрана',
+            gpu: 'Модель видеокарты', ssd: 'Объем SSD', cpuModel: 'Модель процессора', os: 'Операционная система',
+            cores: 'Количество ядер', resolution: 'Разрешение экрана', matrix: 'Тип матрицы',
+            gpuType: 'Тип видеокарты', storage: 'Встроенная память', battery: 'Емкость батареи',
+            cpuBrand: 'Производитель процессора', screenType: 'Тип экрана', camera: 'Камера',
+            features: 'Особенности', refreshRate: 'Частота обновления', screenTech: 'Технология экрана',
+            brightness: 'Яркость', color: 'Цвет', voiceAssistants: 'Голосовые помощники',
+            ports: 'Порты', gpuSeries: 'Серия видеокарты', type: 'Тип', vram: 'Объем видеопамяти',
+            cpuLine: 'Линейка процессора', matrixRes: 'Разрешение матрицы', responseTime: 'Время отклика',
+            aspectRatio: 'Соотношение сторон', ergonomics: 'Эргономика', purpose: 'Назначение',
+            technology: 'Технология', throwRatio: 'Проекционное отношение', lampType: 'Тип лампы',
+            projectorType: 'Тип проектора', contrast: 'Контрастность'
+        };
+        return map[filterKey] || filterKey;
+    }
+    
+    function applyFilters() {
+        let filtered = currentCategory === 'all' ? [...products] : products.filter(p => p.category === currentCategory);
+        if (wholesalePriceEnabled) {
+            filtered = filtered.filter(p => p.wholesale === true);
+            filtered = filtered.map(p => { let newP = {...p, price: Math.round(p.price * 0.85)}; return newP; });
+        } else {
+            let min = +document.getElementById('minPrice')?.value||0, max = +document.getElementById('maxPrice')?.value||500000;
+            filtered = filtered.filter(p => p.price >= min && p.price <= max);
+            if (document.getElementById('inStockOnly')?.checked) filtered = filtered.filter(p => p.inStock);
+            if (document.getElementById('installmentGoods')?.checked) filtered = filtered.filter(p => p.installment);
+            let disc = []; if(document.getElementById('disc5')?.checked) disc.push(5); if(document.getElementById('disc10')?.checked) disc.push(10); if(document.getElementById('disc20')?.checked) disc.push(20);
+            if(disc.length) filtered = filtered.filter(p => disc.includes(p.discount));
+            let brands = Array.from(document.querySelectorAll('#brandList input:checked')).map(cb => cb.value);
+            if(brands.length) filtered = filtered.filter(p => brands.includes(p.brand));
+            if(currentCategory !== 'all' && filterData[currentCategory]) {
+                for(let [key, values] of Object.entries(filterData[currentCategory])) {
+                    if(key !== 'brands') {
+                        let checked = Array.from(document.querySelectorAll(`#filter_${key} input:checked`)).map(cb => cb.value);
+                        if(checked.length) {
+                            filtered = filtered.filter(p => checked.includes(p.specs[getSpecKey(key)]));
+                        }
+                    }
+                }
+            }
+            let searchTerm = document.getElementById('globalSearchInput')?.value.toLowerCase();
+            if(searchTerm) filtered = filtered.filter(p => p.name.toLowerCase().includes(searchTerm) || p.brand.toLowerCase().includes(searchTerm));
+        }
+        filteredProducts = filtered;
+        updateProductsGrid();
+    }
+    
+    function updateProductsGrid() { 
+        let html=''; 
+        filteredProducts.forEach(p=>{ 
+            let finalPrice = p.price;
+            let oldPriceHtml = p.discount > 0 ? `<span class="old-price">${p.originalPrice.toLocaleString()} ₽</span>` : '';
+            let voteStatus = userVotes[p.id];
+            html+=`<div class="product-card"><img src="${p.image}" class="product-image" onclick="openProductModal(${p.id})"><div class="product-info" onclick="openProductModal(${p.id})"><div class="product-name">${p.name}</div><div class="product-price">${finalPrice.toLocaleString()} ₽ ${oldPriceHtml}</div><div>⭐ ${p.rating}</div><div class="rating-buttons"><button class="rating-btn ${voteStatus === 'up' ? 'voted' : ''}" onclick="event.stopPropagation(); voteProduct(${p.id}, 'up')">👍 ${p.votes.up}</button><button class="rating-btn ${voteStatus === 'down' ? 'voted' : ''}" onclick="event.stopPropagation(); voteProduct(${p.id}, 'down')">👎 ${p.votes.down}</button></div></div><div class="product-actions"><button class="add-to-cart" onclick="addToCart(${p.id}); event.stopPropagation()">🛒 В корзину</button><button class="add-to-favorite" onclick="toggleFavorite(${p.id}); event.stopPropagation()">${currentFavorites.includes(p.id) ? '★' : '☆'}</button></div></div>`; 
+        }); 
+        document.getElementById('productsGrid').innerHTML = html || '<div style="text-align:center;padding:40px">Товары не найдены</div>'; 
+        document.getElementById('productsCount').innerText = filteredProducts.length; 
+    }
+    function sortProducts(type) { if(type === 'priceAsc') filteredProducts.sort((a,b)=>a.price-b.price); else if(type === 'priceDesc') filteredProducts.sort((a,b)=>b.price-a.price); else if(type === 'ratingDesc') filteredProducts.sort((a,b)=>b.rating-a.rating); updateProductsGrid(); }
+    function filterByCategory(cat) { currentCategory = cat; renderFilters(); applyFilters(); document.querySelectorAll('.category-btn').forEach(btn=>btn.classList.remove('active')); if(event?.target && event.target.classList) event.target.classList.add('active'); }
+    function toggleCompare(id,checked) { if(checked){ if(compareList.length>=3){ alert('Максимум 3'); if(event?.target) event.target.checked=false; return; } compareList.push(id); } else compareList=compareList.filter(i=>i!==id); let bar=document.getElementById('compareBar'); if(compareList.length){ let html=''; compareList.forEach(i=>{ let p=products.find(x=>x.id===i); html+=`<div class="compare-item"><img src="${p.image}" width="30"><span>${p.name}</span><span onclick="toggleCompare(${i},false)" style="cursor:pointer">✕</span></div>`; }); document.getElementById('compareProducts').innerHTML=html; bar.style.display='flex'; } else bar.style.display='none'; }
+    function compareProducts() { if(compareList.length<2){ alert('Выберите 2+ товара'); return; } let win=window.open('','Сравнение','width=1100,height=650'); let html=`<html><head><title>Сравнение</title><style>th,td{border:1px solid #ccc;padding:12px}th{background:#0f172a;color:white}</style></head><body><h2>Сравнение</h2><table><th>Параметр</th>${compareList.map(id=>`<th>${products.find(p=>p.id===id).name}</th>`).join('')}</table>`; let allSpecs=new Set(); compareList.forEach(id=>{ let p=products.find(p=>p.id===id); Object.keys(p.specs).forEach(k=>allSpecs.add(k)); }); allSpecs.forEach(spec=>{ html+=`<tr><th>${spec}</th>${compareList.map(id=>`<td>${products.find(p=>p.id===id).specs[spec]||'-'}</td>`).join('')}<tr>`; }); html+=`<tr><th>Цена</th>${compareList.map(id=>`<td>${products.find(p=>p.id===id).price.toLocaleString()} ₽</td>`).join('')}</tr>`; html+=`<tr><button onclick="window.close()">Закрыть</button></body></html>`; win.document.write(html); }
+    function openProductModal(id) { 
+        let p=products.find(x=>x.id===id); 
+        let specsHtml='<table class="specs-table">'; for(let [k,v] of Object.entries(p.specs)) specsHtml+=`<tr><td style="padding:12px;background:#f1f5f9;width:180px">${k}</td><td style="padding:12px">${v}</td></tr>`; specsHtml+='</table>';
+        let oldPriceHtml = p.discount > 0 ? `<span class="old-price" style="font-size:18px;">${p.originalPrice.toLocaleString()} ₽</span>` : '';
+        let detail=`<div class="product-detail"><img src="${p.image}" class="product-detail-image"><div><h2>${p.name}</h2><div class="product-price" style="font-size:28px;">${p.price.toLocaleString()} ₽ ${oldPriceHtml}</div><div><strong>⭐ ${p.rating}</strong></div><p>${p.description}</p><h3>📋 Характеристики</h3>${specsHtml}</div></div>`;
+        document.getElementById('productDetail').innerHTML=detail;
+        let similar=products.filter(pr=>pr.category===p.category&&pr.id!==p.id).slice(0,4);
+        let simHtml='<h3>📊 Похожие товары</h3><div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:15px">';
+        similar.forEach(s=>{ let priceCompare = s.price < p.price ? '🔻 Дешевле' : (s.price > p.price ? '🔺 Дороже' : '💰 Одинаково'); simHtml+=`<div class="similar-item" onclick="openProductModal(${s.id})"><img src="${s.image}" width="100%" style="height:100px;object-fit:contain;margin-bottom:8px;"><div style="font-weight:700">${s.name}</div><div class="product-price" style="font-size:16px">${s.price.toLocaleString()} ₽</div><div style="font-size:11px;color:#3b82f6">${priceCompare}</div></div>`; });
+        simHtml+='</div>'; document.getElementById('similarProducts').innerHTML=simHtml; document.getElementById('productModal').style.display='block';
+    }
+    function closeModal() { document.getElementById('productModal').style.display='none'; }
+    function renderCategories() { let catsList = [{id:'all',name:'Все товары'},{id:'notebooks',name:'💻 Ноутбуки'},{id:'smartphones',name:'📱 Смартфоны'},{id:'tvs',name:'📺 Телевизоры'},{id:'computers',name:'🖥️ Компьютеры'},{id:'monitors',name:'🖥️ Мониторы'},{id:'projectors',name:'📽️ Проекторы'}]; document.getElementById('categoriesContainer').innerHTML = catsList.map(c=>`<button class="category-btn ${c.id===currentCategory?'active':''}" onclick="filterByCategory('${c.id}')">${c.name}</button>`).join(''); }
+    function initMap(){ if(typeof ymaps==='undefined') return; ymaps.ready(()=>{ let map=new ymaps.Map('map',{center:[55.7558,37.6173],zoom:9}); storesList.forEach(s=>{ map.geoObjects.add(new ymaps.Placemark([s.lat,s.lng],{balloonContent:`<b>${s.name}</b><br>📍 ${s.address}<br>📞 ${s.phone}`})); }); window.ymapsMap=map; }); }
+    function openStores(){ document.getElementById('storesModal').style.display='block'; if(window.ymapsMap) setTimeout(()=>window.ymapsMap.container.fitToViewport(),100); else initMap(); document.getElementById('storesList').innerHTML = storesList.map(s=>`<div class="store-item" onclick="window.ymapsMap?.setCenter([${s.lat},${s.lng}],15)"><div class="store-name">🏬 ${s.name}</div><div>📍 ${s.address}</div><div>📞 ${s.phone}</div><div>⏰ ${s.hours}</div></div>`).join(''); }
+    function closeStores(){ document.getElementById('storesModal').style.display='none'; }
+    
+    // Профиль пользователя
+    function openProfileModal() { if(!currentUser) return; document.getElementById('profileModal').style.display='block'; renderProfile(); }
+    function closeProfileModal() { document.getElementById('profileModal').style.display='none'; }
+    function renderProfile() {
+        if(currentUser.role === 'user') {
+            let orders = getOrders().filter(o => o.userId === currentUser.id);
+            let userComplaints = complaints.filter(c => c.userId === currentUser.id);
+            let notifications = userNotifications[currentUser.id] || [];
+            let ordersHtml = orders.length ? orders.map(o => `<div style="border:1px solid #e2e8f0; border-radius:20px; padding:16px; margin-bottom:12px;"><div><strong>Заказ №${o.id}</strong> от ${o.date}</div><div>Сумма: ${o.total.toLocaleString()} ₽</div><div>Статус: ${o.status}</div><div>Самовывоз: ${o.store}</div><div>Товары: ${o.items.map(i=>`${i.name} x${i.quantity}`).join(', ')}</div></div>`).join('') : '<p>Нет заказов</p>';
+            let complaintsHtml = userComplaints.length ? userComplaints.map(c => `<div class="complaint-card"><div><strong>📝 Ваша жалоба от ${c.date}</strong></div><div>${c.message}</div>${c.answer ? `<div class="answer-box"><strong>✅ Ответ менеджера:</strong><br>${c.answer}</div>` : '<div class="answer-box" style="background:#fef3c7;"><em>⏳ Ожидает ответа менеджера...</em></div>'}</div>`).join('') : '<p>Нет обращений в поддержку</p>';
+            let notificationsHtml = notifications.length ? notifications.map(n => `<div style="border-left:3px solid #3b82f6; padding:8px 12px; margin-bottom:8px; background:#f8fafc; border-radius:12px;"><div>📢 ${n.message}</div><small>${n.date}</small></div>`).join('') : '<p>Нет уведомлений</p>';
+            let html = `<div style="text-align:center; margin-bottom:24px;"><h3>${currentUser.name}</h3><p style="color:#64748b;">${currentUser.email} | Роль: Пользователь</p></div><div style="display:grid; gap:24px;"><div><h3>📋 Мои заказы</h3>${ordersHtml}</div><div><h3>📢 Уведомления</h3>${notificationsHtml}</div><div><h3>💬 Обращения в поддержку</h3>${complaintsHtml}</div></div>`;
+            document.getElementById('profileBody').innerHTML = html;
+        } else {
+            let roleText = currentUser.role === 'admin' ? 'Администратор' : 'Менеджер';
+            let html = `<div style="text-align:center; padding:40px;"><div style="font-size:48px; margin-bottom:16px;">${currentUser.role === 'admin' ? '👑' : '🛠️'}</div><h2>${currentUser.name}</h2><p style="color:#64748b; margin-top:8px;">${currentUser.email}</p><p style="margin-top:16px; background:#f1f5f9; display:inline-block; padding:6px 20px; border-radius:40px; font-weight:600;">${roleText}</p></div>`;
+            document.getElementById('profileBody').innerHTML = html;
+        }
+    }
+    
+    // Жалоба от пользователя
+    function sendSupportRequest() { 
+        let name=document.getElementById('supportName').value; 
+        let email=document.getElementById('supportEmail').value; 
+        let msg=document.getElementById('supportMessage').value; 
+        if(!name||!email||!msg){ alert('Заполните все поля'); return; } 
+        if(!email.includes('@')){ alert('Введите корректный email'); return; }
+        complaints.push({ id: Date.now(), userId: currentUser.id, userName: name, userEmail: email, message: msg, answer: null, date: new Date().toLocaleString() });
+        saveComplaints();
+        alert('Спасибо! Ваша жалоба отправлена. Менеджер ответит в ближайшее время.'); 
+        closeSupportModal(); 
+    }
+    function openSupportModal() { if(!currentUser || currentUser.role !== 'user'){ alert('Только зарегистрированные пользователи могут обращаться в поддержку'); return; } document.getElementById('supportModal').style.display='block'; renderSupportForm(); }
+    function closeSupportModal() { document.getElementById('supportModal').style.display='none'; }
+    function renderSupportForm() { let html=`<div style="text-align:center;margin-bottom:20px;"><p>📞 <strong>+7 (800) 555-35-35</strong> (ежедневно 9:00-21:00)</p></div><div class="form-field"><label>Ваше имя</label><input type="text" id="supportName" value="${currentUser.name}" placeholder="Имя"></div><div class="form-field"><label>Email для ответа</label><input type="email" id="supportEmail" value="${currentUser.email}" placeholder="Email"></div><div class="form-field"><label>Текст жалобы на товар</label><textarea id="supportMessage" rows="4" placeholder="Опишите проблему с товаром..."></textarea></div><button class="apply-filter-btn" onclick="sendSupportRequest()">📨 Отправить жалобу</button>`; document.getElementById('supportBody').innerHTML=html; }
+    function saveComplaints() { localStorage.setItem('complaints', JSON.stringify(complaints)); }
+    function addNotification(userId, message) { if(!userNotifications[userId]) userNotifications[userId]=[]; userNotifications[userId].push({message, date:new Date().toLocaleString(), read:false}); localStorage.setItem('userNotifications', JSON.stringify(userNotifications)); }
+    function checkAndShowNotifications() { if(currentUser && userNotifications[currentUser.id]){ let unread=userNotifications[currentUser.id].filter(n=>!n.read); if(unread.length){ showNotification(`📢 У вас ${unread.length} новое уведомление о заказе/жалобе!`); unread.forEach(n=>n.read=true); localStorage.setItem('userNotifications', JSON.stringify(userNotifications)); } } }
+    function showNotification(msg) { let d=document.createElement('div'); d.className='notification'; d.innerText=msg; document.body.appendChild(d); setTimeout(()=>d.remove(),4000); }
+    
+    // Оформление заказа
+    function openCheckoutModal() { if(!currentUser){ alert('Войдите'); openAuthModal(); closeCart(); return; } if(!currentCart.length){ alert('Корзина пуста'); return; } closeCart(); document.getElementById('checkoutModal').style.display='block'; renderCheckoutForm(); }
+    function closeCheckoutModal() { document.getElementById('checkoutModal').style.display='none'; }
+    function renderCheckoutForm() { let total = currentCart.reduce((s,i)=>s+i.price*i.quantity,0); let storesHtml = storesList.map(s => `<option value="${s.id}">${s.name} (${s.address})</option>`).join(''); let html = `<div style="margin-bottom:20px;"><label>🏬 Выберите магазин самовывоза:</label><select id="pickupStore" style="width:100%; padding:12px; border-radius:40px; margin-top:8px;">${storesHtml}</select></div><div style="display:flex; gap:20px; margin-bottom:20px;"><label><input type="radio" name="paymentMethod" value="card" onchange="updatePaymentMethod('card')"> 💳 Безналичная</label><label><input type="radio" name="paymentMethod" value="cash" onchange="updatePaymentMethod('cash')"> 💵 Наличные</label></div><div style="display:flex; gap:20px; margin-bottom:20px;"><label><input type="radio" name="paymentTiming" value="now" onchange="updatePaymentTiming('now')"> 💰 Оплатить сейчас</label><label><input type="radio" name="paymentTiming" value="upon" onchange="updatePaymentTiming('upon')"> 📦 При получении</label></div><div id="cardDetails" style="background:#f8fafc; padding:20px; border-radius:24px; margin:20px 0; display:none;"><h4>💳 Данные карты</h4><input type="text" id="cardNumber" placeholder="Номер карты (16 цифр)" style="width:100%; padding:12px; border-radius:40px; margin-bottom:10px;"><small style="display:block; margin-bottom:10px; color:#64748b;">Введите 16 цифр без пробелов</small><div style="display:flex; gap:10px;"><input type="text" id="cardDate" placeholder="ММ/ГГ" style="flex:1; padding:12px; border-radius:40px;"><input type="text" id="cardCvv" placeholder="CVV (3 цифры)" style="flex:1; padding:12px; border-radius:40px;"></div><small style="display:block; margin-top:10px; color:#64748b;">Дата в формате месяц/год (например 12/28), CVV на обороте карты</small><p style="margin-top:10px;">Сумма: <strong>${total.toLocaleString()} ₽</strong></p></div><div class="cart-total">Сумма: ${total.toLocaleString()} ₽</div><button class="apply-filter-btn" onclick="submitOrder()">✅ Подтвердить заказ</button>`; document.getElementById('checkoutBody').innerHTML = html; document.querySelector('input[name="paymentMethod"][value="card"]').checked = true; document.querySelector('input[name="paymentTiming"][value="now"]').checked = true; updatePaymentMethod('card'); updatePaymentTiming('now'); }
+    function updatePaymentMethod(m) { let t = document.querySelector('input[name="paymentTiming"]:checked')?.value; let cd = document.getElementById('cardDetails'); if(m==='cash'){ if(cd) cd.style.display='none'; let ct=document.querySelector('input[name="paymentTiming"][value="upon"]'); if(ct) ct.checked=true; document.querySelectorAll('input[name="paymentTiming"]').forEach(r=>{ if(r.value!=='upon') r.disabled=true; }); } else { document.querySelectorAll('input[name="paymentTiming"]').forEach(r=>r.disabled=false); if(t==='now') cd.style.display='block'; else cd.style.display='none'; } }
+    function updatePaymentTiming(t) { let m=document.querySelector('input[name="paymentMethod"]:checked')?.value; let cd=document.getElementById('cardDetails'); if(m==='cash'){ if(cd) cd.style.display='none'; return; } if(t==='now') cd.style.display='block'; else cd.style.display='none'; }
+    function validateCard() { let num=document.getElementById('cardNumber')?.value.replace(/\s/g,''); let date=document.getElementById('cardDate')?.value; let cvv=document.getElementById('cardCvv')?.value; if(!num||!/^\d{16}$/.test(num)){ alert('❌ Номер карты должен содержать ровно 16 цифр'); return false; } if(!date||!/^\d{2}\/\d{2}$/.test(date)){ alert('❌ Укажите дату в формате ММ/ГГ (например 12/28)'); return false; } let [mm,yy]=date.split('/'); if(parseInt(mm)<1||parseInt(mm)>12){ alert('❌ Месяц должен быть от 01 до 12'); return false; } if(!cvv||!/^\d{3}$/.test(cvv)){ alert('❌ CVV код должен содержать 3 цифры (на обороте карты)'); return false; } return true; }
+    function submitOrder() { let total=currentCart.reduce((s,i)=>s+i.price*i.quantity,0); let m=document.querySelector('input[name="paymentMethod"]:checked')?.value; let t=document.querySelector('input[name="paymentTiming"]:checked')?.value; let sid=parseInt(document.getElementById('pickupStore')?.value); let s=storesList.find(s=>s.id===sid); if(!s){ alert('Выберите магазин'); return; } if(m==='card'&&t==='now') if(!validateCard()) return; if(m==='cash'&&t==='now'){ alert('Наличными можно оплатить только при получении'); return; } let orders=getOrders(); let nid=orders.length>0?Math.max(...orders.map(o=>o.id))+1:1; orders.push({ id:nid, userId:currentUser.id, items:[...currentCart], total, status:'Новый', paymentMethod:m, paymentTiming:t, store:s.name, storeAddress:s.address, date:new Date().toLocaleString() }); saveOrders(orders); addNotification(currentUser.id, `Ваш заказ №${nid} оформлен. Статус: Новый. Самовывоз: ${s.name}`); alert(`Заказ №${nid} оформлен!\nСамовывоз: ${s.name}\n${s.address}`); currentCart=[]; saveUserData(); closeCheckoutModal(); updateCounters(); updateProductsGrid(); renderCartModal(); }
+    
+    // Функция для просмотра товаров в заказе
+    function viewOrderItems(orderId) {
+        let orders = getOrders();
+        let order = orders.find(o => o.id === orderId);
+        if (!order) { alert('Заказ не найден'); return; }
+        let html = `<div style="margin-bottom:20px;"><strong>Заказ №${order.id}</strong> от ${order.date}<br>Сумма: ${order.total.toLocaleString()} ₽<br>Статус: ${order.status}<br>Самовывоз: ${order.store}</div>`;
+        html += `<table style="width:100%; border-collapse:collapse;"><thead><tr style="background:#f1f5f9;"><th style="padding:12px; text-align:left;">Товар</th><th style="padding:12px; text-align:left;">Цена</th><th style="padding:12px; text-align:left;">Кол-во</th><th style="padding:12px; text-align:left;">Сумма</th><tr></thead><tbody>`;
+        order.items.forEach(item => {
+            html += `<tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:12px;"><img src="${item.image}" width="40" style="border-radius:8px; vertical-align:middle; margin-right:10px;">${item.name}</td><td style="padding:12px;">${item.price.toLocaleString()} ₽</td><td style="padding:12px;">${item.quantity}</td><td style="padding:12px;">${(item.price * item.quantity).toLocaleString()} ₽</td></tr>`;
+        });
+        html += `</tbody></table>`;
+        document.getElementById('orderItemsBody').innerHTML = html;
+        document.getElementById('orderItemsModal').style.display = 'block';
+    }
+    
+    function closeOrderItemsModal() {
+        document.getElementById('orderItemsModal').style.display = 'none';
+    }
+    
+    // ======================= ФУНКЦИИ ДЛЯ БЭКАПА ДАННЫХ =======================
+    function exportAllData() {
+        const allData = {
+            products: products,
+            users: getUsers(),
+            orders: getOrders(),
+            complaints: complaints,
+            userNotifications: userNotifications,
+            version: "1.0",
+            exportDate: new Date().toISOString()
+        };
+        
+        const dataStr = JSON.stringify(allData, null, 2);
+        const blob = new Blob([dataStr], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `shop_backup_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showNotification("✅ Данные успешно экспортированы!");
+    }
+    
+    function importAllData(file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const importedData = JSON.parse(e.target.result);
+                
+                // Восстанавливаем товары
+                if (importedData.products && Array.isArray(importedData.products)) {
+                    products = importedData.products;
+                    saveProductsToStorage();
+                }
+                
+                // Восстанавливаем пользователей
+                if (importedData.users && Array.isArray(importedData.users)) {
+                    saveUsers(importedData.users);
+                }
+                
+                // Восстанавливаем заказы
+                if (importedData.orders && Array.isArray(importedData.orders)) {
+                    saveOrders(importedData.orders);
+                }
+                
+                // Восстанавливаем жалобы
+                if (importedData.complaints && Array.isArray(importedData.complaints)) {
+                    complaints = importedData.complaints;
+                    saveComplaints();
+                }
+                
+                // Восстанавливаем уведомления
+                if (importedData.userNotifications) {
+                    userNotifications = importedData.userNotifications;
+                    localStorage.setItem('userNotifications', JSON.stringify(userNotifications));
+                }
+                
+                showNotification("✅ Данные успешно импортированы! Обновите страницу.");
+                setTimeout(() => location.reload(), 1500);
+            } catch(err) {
+                alert("Ошибка при импорте: неверный формат файла");
+                console.error(err);
+            }
+        };
+        reader.readAsText(file);
+    }
+    
+    function triggerImport() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = (e) => {
+            if (e.target.files && e.target.files[0]) {
+                importAllData(e.target.files[0]);
+            }
+        };
+        input.click();
+    }
+    
+    // АДМИНКА С ПОЛНОЙ ФУНКЦИОНАЛЬНОСТЬЮ
+    function showAdminPanel() { 
+        document.getElementById('adminPanelContainer').style.display='flex'; 
+        document.getElementById('catalogUserView').style.display='none'; 
+        const side = document.getElementById('adminSidebar'); 
+        if(currentUser?.role === 'admin'){ 
+            side.innerHTML = `<h3>👑 Админ панель</h3>
+                <div style="margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px;">
+                    <button class="backup-btn" onclick="exportAllData()">💾 Экспорт данных (JSON)</button>
+                    <button class="backup-btn" onclick="triggerImport()" style="background: #10b981;">📂 Импорт данных (JSON)</button>
+                </div>
+                <button onclick="loadAdminSection('users')">👥 Пользователи</button>
+                <button onclick="loadAdminSection('orders')">📦 Заказы</button>
+                <button onclick="loadAdminSection('products')">🛍️ Товары</button>
+                <button onclick="loadAdminSection('wholesale')">🏭 Оптовые товары</button>
+                <button onclick="loadAdminSection('complaints')">💬 Жалобы</button>`; 
+            loadAdminSection('users'); 
+        } else if(currentUser?.role === 'manager'){ 
+            side.innerHTML = `<h3>🛠️ Панель менеджера</h3><button onclick="loadAdminSection('products')">🛍️ Товары</button><button onclick="loadAdminSection('complaints')">💬 Жалобы пользователей</button>`; 
+            loadAdminSection('products'); 
+        } 
+    }
+    
+    function loadAdminSection(s) { 
+        const cont = document.getElementById('adminContent'); 
+        if(s === 'users'){ 
+            let users = getUsers(); 
+            cont.innerHTML = `<h2 style="margin-bottom:20px;">👥 Управление пользователями</h2><button class="action-btn" onclick="showAddUserModal()" style="margin-bottom:20px;">➕ Добавить пользователя</button><div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>ID</th><th>Логин</th><th>Пароль</th><th>Имя</th><th>Email</th><th>Телефон</th><th>Роль</th><th>Действия</th></tr></thead><tbody>${users.map(u => `<tr><td style="vertical-align:middle;">${u.id}</td><td style="vertical-align:middle;">${u.username}</td><td style="vertical-align:middle;">${u.password}</td><td style="vertical-align:middle;">${u.name}</td><td style="vertical-align:middle;">${u.email}</td><td style="vertical-align:middle;">${u.phone}</td><td style="vertical-align:middle;">${u.role}</td><td style="vertical-align:middle;"><button class="edit-btn" onclick='editUser(${JSON.stringify(u).replace(/"/g, '&quot;')})'>✏️ Ред.</button><button class="delete-btn" onclick="deleteUser(${u.id})">🗑️ Удалить</button></td></tr>`).join('')}</tbody>}</div>`; 
+        } else if(s === 'orders'){ 
+            let orders = getOrders(), users = getUsers(); 
+            let storesHtml = storesList.map(st => `<option value="${st.id}">${st.name} (${st.address})</option>`).join(''); 
+            cont.innerHTML = `<h2>📦 Управление заказами</h2><div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>ID</th><th>Пользователь</th><th>Сумма</th><th>Оплата</th><th>Статус</th><th>Магазин</th><th>Действия</th></tr></thead><tbody>${orders.map(o => { let u = users.find(u => u.id === o.userId); return `<tr><td style="vertical-align:middle;">${o.id}</td><td style="vertical-align:middle;">${u ? u.name : 'Гость'}</td><td style="vertical-align:middle;">${o.total.toLocaleString()} ₽</td><td style="vertical-align:middle;">${o.paymentMethod === 'card' ? 'Безнал' : 'Наличные'}, ${o.paymentTiming === 'now' ? 'сейчас' : 'при получении'}</td><td style="vertical-align:middle;"><select id="status_${o.id}" onchange="notifyStatusChange(${o.id}, ${u?.id})"><option ${o.status === 'Новый' ? 'selected' : ''}>Новый</option><option ${o.status === 'Обработан' ? 'selected' : ''}>Обработан</option><option ${o.status === 'Отправлен' ? 'selected' : ''}>Отправлен</option><option ${o.status === 'Доставлен' ? 'selected' : ''}>Доставлен</option></select></td><td style="vertical-align:middle;"><select id="store_${o.id}">${storesHtml.replace(`value="${storesList.find(s => s.name === o.store)?.id || 1}"`, `value="${storesList.find(s => s.name === o.store)?.id || 1}" selected`)}</select></td><td style="vertical-align:middle;"><button class="view-btn" onclick="viewOrderItems(${o.id})">📋 Просмотреть</button><button class="edit-btn" onclick="saveOrder(${o.id}, ${u?.id})">Сохранить</button><button class="delete-btn" onclick="deleteOrder(${o.id})">Удалить</button></td></tr>` }).join('')}</tbody>}</div>`; 
+        } else if(s === 'products'){ 
+            cont.innerHTML = `<h2>🛍️ Управление товарами</h2><button class="action-btn" onclick="showAddProductModal()" style="margin-bottom:20px;">➕ Добавить товар</button><div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>ID</th><th>Фото</th><th>Название</th><th>Цена</th><th>Скидка</th><th>Бренд</th><th>Действия</th></tr></thead><tbody>${products.map(p => `<tr><td style="vertical-align:middle;">${p.id}</td><td style="vertical-align:middle;"><img src="${p.image}" width="50" style="border-radius:12px;"></td><td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; vertical-align:middle;">${p.name}</td><td style="vertical-align:middle;">${p.price.toLocaleString()} ₽</td><td style="vertical-align:middle;">${p.discount}%</td><td style="vertical-align:middle;">${p.brand}</td><td style="vertical-align:middle;"><button class="edit-btn" onclick='editProduct(${JSON.stringify(p).replace(/"/g, '&quot;')})'>✏️ Ред.</button><button class="delete-btn" onclick="deleteProduct(${p.id})">🗑️ Удалить</button></td></tr>`).join('')}</tbody>}</div>`; 
+        } else if(s === 'wholesale' && currentUser?.role === 'admin'){ 
+            cont.innerHTML = `<h2>🏭 Управление оптовыми товарами</h2><p>Отметьте товары, которые будут показываться при включении фильтра "Цена от поставщика" (оптовая скидка 15%).</p><div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>ID</th><th>Название</th><th>Цена</th><th>Оптовый товар</th><th>Действие</th></tr></thead><tbody>${products.map(p => `<tr><td style="vertical-align:middle;">${p.id}</td><td style="vertical-align:middle;">${p.name}</td><td style="vertical-align:middle;">${p.price.toLocaleString()} ₽</td><td style="vertical-align:middle;"><input type="checkbox" id="wholesale_${p.id}" ${p.wholesale ? 'checked' : ''}></td><td style="vertical-align:middle;"><button class="edit-btn" onclick="toggleWholesaleProduct(${p.id})">Сохранить</button></td></tr>`).join('')}</tbody>}</div>`; 
+        } else if(s === 'complaints'){ 
+            let allComplaints = [...complaints].reverse(); 
+            cont.innerHTML = `<h2>💬 Жалобы пользователей</h2>${allComplaints.length ? allComplaints.map(c => `<div class="complaint-card"><div><strong>👤 ${c.userName}</strong> (${c.userEmail})</div><div><strong>📅 ${c.date}</strong></div><div><strong>Жалоба:</strong> ${c.message}</div>${c.answer ? `<div class="answer-box"><strong>✅ Ответ менеджера:</strong><br>${c.answer}</div><div><button class="delete-btn" onclick="deleteComplaint(${c.id})" style="margin-top:10px;">🗑️ Удалить жалобу</button></div>` : `<div><textarea id="answer_${c.id}" rows="2" placeholder="Введите ответ..." style="width:100%; padding:10px; border-radius:20px; margin-top:10px;"></textarea><div style="margin-top:10px; display:flex; gap:10px;"><button class="edit-btn" onclick="answerComplaint(${c.id})">✉️ Ответить</button><button class="delete-btn" onclick="deleteComplaint(${c.id})">🗑️ Удалить</button></div></div>`}</div>`).join('') : '<p>Нет жалоб</p>'}</div>`; 
+        } 
+    }
+    
+    function deleteComplaint(complaintId) { if(confirm('Удалить жалобу?')){ complaints = complaints.filter(c => c.id !== complaintId); saveComplaints(); loadAdminSection('complaints'); alert('Жалоба удалена'); } }
+    function answerComplaint(complaintId) { let answerText = document.getElementById(`answer_${complaintId}`).value; if(!answerText.trim()){ alert('Введите текст ответа'); return; } let c = complaints.find(c => c.id === complaintId); if(c) { c.answer = answerText; saveComplaints(); addNotification(c.userId, `Менеджер ответил на вашу жалобу: "${answerText.substring(0,100)}${answerText.length>100?'...':''}"`); alert('Ответ отправлен пользователю'); loadAdminSection('complaints'); } }
+    function notifyStatusChange(orderId, userId) { if(userId) { let newStatus=document.getElementById(`status_${orderId}`).value; addNotification(userId, `Статус вашего заказа №${orderId} изменен на "${newStatus}"`); } }
+    function toggleWholesaleProduct(productId) { let p=products.find(p=>p.id===productId); if(p){ p.wholesale=document.getElementById(`wholesale_${productId}`).checked; alert(`Товар "${p.name}" ${p.wholesale ? 'добавлен в оптовый список' : 'удален из оптового списка'}`); saveProductsToStorage(); loadAdminSection('wholesale'); } }
+    function saveOrder(orderId, userId){ let orders=getOrders(); let o=orders.find(o=>o.id===orderId); if(o){ let newStatus=document.getElementById(`status_${orderId}`).value; if(o.status!==newStatus && userId){ addNotification(userId, `Статус вашего заказа №${orderId} изменен на "${newStatus}"`); o.status=newStatus; } let newStoreId=parseInt(document.getElementById(`store_${orderId}`).value); let newStore=storesList.find(s=>s.id===newStoreId); if(newStore){ o.store=newStore.name; o.storeAddress=newStore.address; } saveOrders(orders); alert('Заказ обновлен'); loadAdminSection('orders'); } }
+    function showAddUserModal() { let body=`<div><div class="form-field"><label>Логин</label><input type="text" id="modalUsername"></div><div class="form-field"><label>Пароль</label><input type="text" id="modalPassword"></div><div class="form-field"><label>Имя</label><input type="text" id="modalName"></div><div class="form-field"><label>Email</label><input type="email" id="modalEmail"></div><div class="form-field"><label>Телефон (10 цифр)</label><input type="tel" id="modalPhone"></div><div class="form-field"><label>Роль</label><select id="modalRole"><option>user</option><option>manager</option><option>admin</option></select></div><div style="display:flex; gap:16px; margin-top:20px;"><button class="apply-filter-btn" onclick="confirmAddUser()">✅ Подтвердить</button><button class="action-btn" onclick="closeFormModal()">❌ Отмена</button></div></div>`; openFormModal('➕ Добавление пользователя', body); }
+    function confirmAddUser() { let email=document.getElementById('modalEmail').value, phone=document.getElementById('modalPhone').value; if(!validateEmail(email)){ alert('Email должен содержать @'); return; } if(!validatePhone(phone)){ alert('Телефон 10 цифр'); return; } let users=getUsers(); users.push({ id:users.length+1, username:document.getElementById('modalUsername').value, password:document.getElementById('modalPassword').value, name:document.getElementById('modalName').value, email, phone, role:document.getElementById('modalRole').value }); saveUsers(users); closeFormModal(); loadAdminSection('users'); alert('Добавлен'); }
+    function editUser(user) { let body=`<div><div class="form-field"><label>Логин</label><input type="text" id="modalUsername" value="${user.username}"></div><div class="form-field"><label>Пароль</label><input type="text" id="modalPassword" value="${user.password}"></div><div class="form-field"><label>Имя</label><input type="text" id="modalName" value="${user.name}"></div><div class="form-field"><label>Email</label><input type="email" id="modalEmail" value="${user.email}"></div><div class="form-field"><label>Телефон</label><input type="tel" id="modalPhone" value="${user.phone}"></div><div class="form-field"><label>Роль</label><select id="modalRole"><option ${user.role==='admin'?'selected':''}>admin</option><option ${user.role==='manager'?'selected':''}>manager</option><option ${user.role==='user'?'selected':''}>user</option></select></div><div style="display:flex; gap:16px; margin-top:20px;"><button class="apply-filter-btn" onclick="confirmEditUser(${user.id})">✅ Подтвердить</button><button class="action-btn" onclick="closeFormModal()">❌ Отмена</button></div></div>`; openFormModal('✏️ Редактирование пользователя', body); }
+    function confirmEditUser(id) { let email=document.getElementById('modalEmail').value, phone=document.getElementById('modalPhone').value; if(!validateEmail(email)){ alert('Email должен содержать @'); return; } if(!validatePhone(phone)){ alert('Телефон 10 цифр'); return; } let users=getUsers(); let idx=users.findIndex(u=>u.id===id); if(idx!==-1){ users[idx].username=document.getElementById('modalUsername').value; users[idx].password=document.getElementById('modalPassword').value; users[idx].name=document.getElementById('modalName').value; users[idx].email=email; users[idx].phone=phone; users[idx].role=document.getElementById('modalRole').value; saveUsers(users); closeFormModal(); loadAdminSection('users'); alert('Обновлён'); } }
+    function deleteUser(id){ if(confirm('Удалить?')){ let users=getUsers().filter(u=>u.id!==id); saveUsers(users); loadAdminSection('users'); } }
+    function deleteProduct(id){ if(confirm('Удалить товар?')){ let idx=products.findIndex(p=>p.id===id); if(idx!==-1) products.splice(idx,1); products.sort((a,b)=>a.id-b.id); for(let i=0;i<products.length;i++) products[i].id=i+1; saveProductsToStorage(); loadAdminSection('products'); applyFilters(); } }
+    function deleteOrder(id){ if(confirm('Удалить заказ?')){ let orders=getOrders().filter(o=>o.id!==id); saveOrders(orders); loadAdminSection('orders'); } }
+    
+    // ФОРМА ДОБАВЛЕНИЯ/РЕДАКТИРОВАНИЯ ТОВАРА (ПОЛНАЯ)
+    function getProductFormHTML(product=null) {
+        let nameVal = product ? product.name : '';
+        let origPriceVal = product ? product.originalPrice : '';
+        let discountVal = product ? product.discount : 0;
+        let categoryVal = product ? product.category : 'notebooks';
+        let brandVal = product ? product.brand : '';
+        let descVal = product ? product.description : '';
+        let imageSrc = product ? product.image : '';
+        let isEdit = !!product;
+        let currentSpecs = product ? product.specs : {};
+        let specsHtml = getSpecsFormHTML(categoryVal, currentSpecs);
+        return `<div>
+            <div class="form-field"><label>Название товара</label><input type="text" id="modalProductName" value="${nameVal.replace(/"/g, '&quot;')}"></div>
+            <div class="form-field"><label>Исходная цена (₽)</label><input type="number" id="modalOriginalPrice" value="${origPriceVal}"></div>
+            <div class="form-field"><label>Скидка</label><div class="discount-buttons" id="discountButtonsContainer"><button type="button" class="discount-btn" data-discount="5">5%</button><button type="button" class="discount-btn" data-discount="15">15%</button><button type="button" class="discount-btn" data-discount="20">20%</button></div><input type="hidden" id="modalDiscount" value="${discountVal}"></div>
+            <div class="price-preview" id="pricePreview">Итоговая цена: ${product ? product.price : 0} ₽</div>
+            <div class="form-field"><label>Категория</label><select id="modalProductCategory" onchange="updateSpecsForm()"><option ${categoryVal==='notebooks'?'selected':''}>notebooks</option><option ${categoryVal==='smartphones'?'selected':''}>smartphones</option><option ${categoryVal==='tvs'?'selected':''}>tvs</option><option ${categoryVal==='computers'?'selected':''}>computers</option><option ${categoryVal==='monitors'?'selected':''}>monitors</option><option ${categoryVal==='projectors'?'selected':''}>projectors</option></select></div>
+            <div class="form-field"><label>Бренд</label><input type="text" id="modalProductBrand" value="${brandVal.replace(/"/g, '&quot;')}"></div>
+            <div class="form-field"><label>Изображение</label><input type="file" id="modalProductImage" accept="image/*"><div id="imagePreview" class="image-preview">${imageSrc ? `<img src="${imageSrc}" style="max-width:100px; border-radius:12px;">` : ''}</div></div>
+            <div class="form-field"><label>Описание</label><textarea id="modalProductDesc" rows="3">${descVal.replace(/"/g, '&quot;')}</textarea></div>
+            <div id="specsContainer">${specsHtml}</div>
+            <div style="display:flex; gap:16px; margin-top:20px;"><button class="apply-filter-btn" onclick="confirmProductSave(${isEdit ? product.id : 'null'})">✅ ${isEdit ? 'Сохранить изменения' : 'Добавить товар'}</button><button class="action-btn" onclick="closeFormModal()">❌ Отмена</button></div>
+        </div>`;
+    }
+    
+    function updateSpecsForm() {
+        let category = document.getElementById('modalProductCategory').value;
+        let currentSpecs = {};
+        if(filterData[category]) {
+            for(let key of Object.keys(filterData[category])) {
+                if(key !== 'brands') {
+                    let el = document.getElementById(`spec_${key}`);
+                    if(el) currentSpecs[getSpecKey(key)] = el.value;
+                }
+            }
+        }
+        let specsHtml = getSpecsFormHTML(category, currentSpecs);
+        document.getElementById('specsContainer').innerHTML = specsHtml;
+        attachDiscountButtonsLogic();
+    }
+    
+    function showAddProductModal() { 
+        let html = getProductFormHTML(null);
+        openFormModal('➕ Добавление товара', html); 
+        setTimeout(() => {
+            attachDiscountButtonsLogic();
+            window.updateSpecsForm = updateSpecsForm;
+        }, 50);
+    }
+    function editProduct(product) { 
+        let html = getProductFormHTML(product);
+        openFormModal('✏️ Редактирование товара', html); 
+        setTimeout(() => {
+            attachDiscountButtonsLogic();
+            window.updateSpecsForm = updateSpecsForm;
+        }, 50);
+    }
+    
+    function attachDiscountButtonsLogic() {
+        let btns = document.querySelectorAll('.discount-btn');
+        let discInput = document.getElementById('modalDiscount');
+        let origInput = document.getElementById('modalOriginalPrice');
+        let previewDiv = document.getElementById('pricePreview');
+        if(!btns.length || !discInput || !origInput) return;
+        let updatePrice = () => {
+            let orig = parseInt(origInput.value) || 0;
+            let disc = parseInt(discInput.value) || 0;
+            let final = disc > 0 ? Math.round(orig * (100 - disc) / 100) : orig;
+            previewDiv.innerHTML = `Итоговая цена: ${final.toLocaleString()} ₽` + (disc > 0 && orig > 0 ? ` <span style="font-size:12px;">(было ${orig.toLocaleString()} ₽)</span>` : '');
+        };
+        btns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                let d = parseInt(this.dataset.discount);
+                discInput.value = d;
+                btns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                updatePrice();
+            });
+        });
+        origInput.addEventListener('input', updatePrice);
+        let currentDisc = parseInt(discInput.value);
+        if(currentDisc > 0) {
+            let activeBtn = Array.from(btns).find(b => parseInt(b.dataset.discount) === currentDisc);
+            if(activeBtn) activeBtn.classList.add('active');
+        }
+        updatePrice();
+        let fileInput = document.getElementById('modalProductImage');
+        if(fileInput) {
+            fileInput.addEventListener('change', function(e) {
+                let file = e.target.files[0];
+                if(file) {
+                    let reader = new FileReader();
+                    reader.onload = function(ev) {
+                        let preview = document.getElementById('imagePreview');
+                        if(preview) preview.innerHTML = `<img src="${ev.target.result}" style="max-width:100px; border-radius:12px;">`;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+    }
+    
+    function confirmProductSave(productId) {
+        let name = document.getElementById('modalProductName').value;
+        let origPrice = parseInt(document.getElementById('modalOriginalPrice').value);
+        let discount = parseInt(document.getElementById('modalDiscount').value) || 0;
+        if(discount < 0) discount = 0; if(discount > 20) discount = 20;
+        let finalPrice = discount > 0 ? Math.round(origPrice * (100 - discount) / 100) : origPrice;
+        let category = document.getElementById('modalProductCategory').value;
+        let brand = document.getElementById('modalProductBrand').value;
+        let description = document.getElementById('modalProductDesc').value;
+        let file = document.getElementById('modalProductImage').files[0];
+        
+        let specs = {};
+        if(filterData[category]) {
+            for(let key of Object.keys(filterData[category])) {
+                if(key !== 'brands') {
+                    let el = document.getElementById(`spec_${key}`);
+                    if(el) specs[getSpecKey(key)] = el.value;
+                }
+            }
+        }
+        specs['Бренд'] = brand;
+        
+        let finishSave = (imgUrl) => {
+            if(productId === null) {
+                let newId = products.length + 1;
+                products.push({ 
+                    id:newId, name:name, originalPrice:origPrice, price:finalPrice, category:category, brand:brand, 
+                    rating:4.5, inStock:true, discount:discount, installment:true, isNew:false, image:imgUrl, 
+                    description:description || 'Новый товар', specs:specs, votes:{ up:0, down:0 }, wholesale:false 
+                });
+                saveProductsToStorage();
+                closeFormModal(); loadAdminSection('products'); applyFilters(); alert('Товар добавлен');
+            } else {
+                let p = products.find(p => p.id === productId);
+                if(p) {
+                    p.name = name; p.originalPrice = origPrice; p.discount = discount; p.price = finalPrice; 
+                    p.category = category; p.brand = brand; p.description = description; p.image = imgUrl; p.specs = specs;
+                    saveProductsToStorage();
+                    closeFormModal(); loadAdminSection('products'); applyFilters(); alert('Товар обновлён');
+                }
+            }
+        };
+        if(file) {
+            let reader = new FileReader();
+            reader.onload = e => finishSave(e.target.result);
+            reader.readAsDataURL(file);
+        } else {
+            let existingImg = document.querySelector('#imagePreview img')?.src;
+            finishSave(existingImg || 'https://avatars.mds.yandex.net/get-mpic/5238882/img_id7129462892158577910.jpeg/orig');
+        }
+    }
+    
+    function openFormModal(title, html) { document.getElementById('formModalTitle').innerText=title; document.getElementById('formModalBody').innerHTML=html; document.getElementById('formModal').style.display='block'; }
+    function closeFormModal() { document.getElementById('formModal').style.display='none'; }
+    function setupGlobalSearch() { let inp=document.getElementById('globalSearchInput'); let res=document.getElementById('globalSearchResults'); inp?.addEventListener('input',()=>{ let q=inp.value.toLowerCase(); if(q.length<2){ res.style.display='none'; applyFilters(); return; } let f=products.filter(p=>p.name.toLowerCase().includes(q)||p.brand.toLowerCase().includes(q)).slice(0,10); if(f.length){ let html=''; f.forEach(p=>{ html+=`<div style="padding:12px 16px; border-bottom:1px solid #eee; cursor:pointer; display:flex; gap:10px;" onclick="openProductModal(${p.id})"><img src="${p.image}" width="40"><div><b>${p.name}</b><br>${p.price.toLocaleString()} ₽</div></div>`; }); res.innerHTML=html; res.style.display='block'; } else res.style.display='none'; applyFilters(); }); document.addEventListener('click',(e)=>{ if(!inp?.contains(e.target)) res.style.display='none'; }); }
+    
+    function updateUI() { 
+        let btn=document.getElementById('authBtn'); 
+        let ua=document.getElementById('userActions'); 
+        let old=document.querySelector('.logout-btn'); 
+        let supportBtn=document.getElementById('supportBtn');
+        let cartBtn = document.getElementById('cartBtn');
+        let favBtn = document.getElementById('favBtn');
+        if(supportBtn) supportBtn.remove(); if(old) old.remove();
+        
+        if(currentUser){ 
+            btn.innerHTML=`👤 ${currentUser.name}`; btn.onclick=openProfileModal; 
+            let lb=document.createElement('button'); lb.className='action-btn logout-btn'; lb.innerHTML='🚪 Выйти'; lb.onclick=logout; ua.appendChild(lb);
+            
+            if(currentUser.role === 'admin' || currentUser.role === 'manager') {
+                if(cartBtn) cartBtn.style.display = 'none';
+                if(favBtn) favBtn.style.display = 'none';
+            } else {
+                if(cartBtn) cartBtn.style.display = 'flex';
+                if(favBtn) favBtn.style.display = 'flex';
+            }
+
+            if(currentUser.role === 'user') {
+                let supBtn=document.createElement('button'); supBtn.id='supportBtn'; supBtn.className='action-btn'; supBtn.innerHTML='📞 Поддержка'; supBtn.onclick=openSupportModal; ua.insertBefore(supBtn, lb);
+            }
+            if(currentUser.role==='admin'||currentUser.role==='manager'){ showAdminPanel(); document.getElementById('catalogSearchBox').classList.add('search-hidden'); } 
+            else { document.getElementById('adminPanelContainer').style.display='none'; document.getElementById('catalogUserView').style.display='block'; document.getElementById('catalogSearchBox').classList.remove('search-hidden'); } 
+        } else { 
+            btn.innerHTML='👤 Войти'; btn.onclick=openAuthModal; 
+            document.getElementById('adminPanelContainer').style.display='none'; document.getElementById('catalogUserView').style.display='block'; document.getElementById('catalogSearchBox').classList.remove('search-hidden');
+            if(cartBtn) cartBtn.style.display = 'flex';
+            if(favBtn) favBtn.style.display = 'flex';
+        } 
+    }
+    function openAuthModal(){ document.getElementById('authModal').style.display='block'; } function closeAuthModal(){ document.getElementById('authModal').style.display='none'; }
+    function showRegister(){ document.getElementById('loginForm').style.display='none'; document.getElementById('registerForm').style.display='block'; }
+    function showLogin(){ document.getElementById('loginForm').style.display='block'; document.getElementById('registerForm').style.display='none'; }
+    
+    initDB(); currentUser=null; loadUserData(); updateUI(); renderCategories(); renderFilters(); applyFilters(); initMap(); setupGlobalSearch();
+    window.filterByCategory=filterByCategory; window.sortProducts=sortProducts; window.applyFilters=applyFilters; window.resetFilters=resetFilters; window.toggleWholesaleFilter=toggleWholesaleFilter;
+    window.addToCart=addToCart; window.toggleFavorite=toggleFavorite; window.openCart=openCart; window.closeCart=closeCart; window.openFavorites=openFavorites; window.closeFavorites=closeFavorites;
+    window.changeQuantity=changeQuantity; window.removeFromCart=removeFromCart; window.toggleCompare=toggleCompare; window.compareProducts=compareProducts; window.openProductModal=openProductModal; window.closeModal=closeModal;
+    window.openStores=openStores; window.closeStores=closeStores; window.openAuthModal=openAuthModal; window.closeAuthModal=closeAuthModal; window.showRegister=showRegister; window.showLogin=showLogin;
+    window.register=register; window.login=login; window.logout=logout; window.openCheckoutModal=openCheckoutModal; window.closeCheckoutModal=closeCheckoutModal; window.submitOrder=submitOrder;
+    window.loadAdminSection=loadAdminSection; window.deleteUser=deleteUser; window.saveOrder=saveOrder; window.deleteOrder=deleteOrder; window.deleteProduct=deleteProduct;
+    window.showAddUserModal=showAddUserModal; window.confirmAddUser=confirmAddUser; window.editUser=editUser; window.confirmEditUser=confirmEditUser;
+    window.showAddProductModal=showAddProductModal; window.editProduct=editProduct; window.confirmProductSave=confirmProductSave; window.closeFormModal=closeFormModal;
+    window.updatePaymentMethod=updatePaymentMethod; window.updatePaymentTiming=updatePaymentTiming; window.voteProduct=voteProduct; window.toggleWholesaleProduct=toggleWholesaleProduct;
+    window.openSupportModal=openSupportModal; window.closeSupportModal=closeSupportModal; window.openProfileModal=openProfileModal; window.closeProfileModal=closeProfileModal;
+    window.answerComplaint=answerComplaint; window.deleteComplaint=deleteComplaint; window.toggleFilterGroup=toggleFilterGroup; window.updateSpecsForm=updateSpecsForm;
+    window.viewOrderItems = viewOrderItems;
+    window.closeOrderItemsModal = closeOrderItemsModal;
+    window.exportAllData = exportAllData;
+    window.triggerImport = triggerImport;
+</script>
+</body>
+</html>
